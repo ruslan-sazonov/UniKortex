@@ -70,8 +70,12 @@ async function setupClaudeMCP(devMode: boolean = false): Promise<boolean> {
 
     if (devMode) {
       // Development mode: use local node path
-      // Find the mcp-stdio package relative to this file
-      const mcpPath = path.resolve(__dirname, '../../mcp-stdio/dist/index.js');
+      // Find the mcp-stdio package relative to this file (bundled at packages/cli/dist/index.js)
+      const candidates = [
+        path.resolve(__dirname, '../../mcp-stdio/dist/index.js'),
+        path.resolve(__dirname, '../../../mcp-stdio/dist/index.js'),
+      ];
+      const mcpPath = candidates.find((c) => fs.existsSync(c)) ?? candidates[0]!;
       mcpConfig = {
         command: 'node',
         args: [mcpPath],
