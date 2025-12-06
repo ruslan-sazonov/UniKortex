@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector extension
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: unikortex-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: unikortex
+      POSTGRES_USER: unikortex
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unikortex"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # UniKortex API Server
+  server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: unikortex-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3033
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: unikortex
+      DB_USER: unikortex
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      # Embeddings configuration (optional)
+      EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-auto}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OLLAMA_HOST: ${OLLAMA_HOST:-}
+      # Security
+      JWT_SECRET: ${JWT_SECRET:-please-change-this-secret}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-1 minute}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${SERVER_PORT:-3033}:3033"
+
+  # Optional: Ollama for local embeddings
+  ollama:
+    image: ollama/ollama:latest
+    container_name: unikortex-ollama
+    profiles: ["embeddings"]
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    # Pre-pull embedding model
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull nomic-embed-text && tail -f /dev/null"]
+
+volumes:
+  postgres_data:
+  ollama_data:
+
+networks:
+  default:
+    name: unikortex-network

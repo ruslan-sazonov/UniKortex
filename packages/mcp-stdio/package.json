@@ -1,0 +1,46 @@
+{
+  "name": "@unikortex/mcp-stdio",
+  "version": "0.1.0",
+  "description": "MCP server for UniKortex - Model Context Protocol integration",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unikortex/unikortex.git",
+    "directory": "packages/mcp-stdio"
+  },
+  "homepage": "https://github.com/unikortex/unikortex#readme",
+  "bugs": {
+    "url": "https://github.com/unikortex/unikortex/issues"
+  },
+  "keywords": ["mcp", "model-context-protocol", "claude", "ai", "knowledge-base"],
+  "files": ["dist", "bin"],
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "unikortex-mcp": "bin/unikortex-mcp.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.24.3",
+    "@unikortex/core": "workspace:*",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
