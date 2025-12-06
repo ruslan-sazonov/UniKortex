@@ -29,21 +29,21 @@ jobs:
       - name: Run tests
         run: pnpm test:run
 
-      # Publish packages in dependency order
+      # Publish packages in dependency order using pnpm to resolve workspace: protocol
       - name: Publish @unikortex/core
-        run: npm publish --access public
+        run: pnpm publish --access public --no-git-checks
         working-directory: packages/core
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @unikortex/mcp-stdio
-        run: npm publish --access public
+        run: pnpm publish --access public --no-git-checks
         working-directory: packages/mcp-stdio
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @unikortex/cli
-        run: npm publish --access public
+        run: pnpm publish --access public --no-git-checks
         working-directory: packages/cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
