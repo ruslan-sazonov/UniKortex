@@ -38,6 +38,9 @@ importers:
       '@unikortex/core':
         specifier: workspace:*
         version: link:../core
+      '@unikortex/mcp-stdio':
+        specifier: workspace:*
+        version: link:../mcp-stdio
       chalk:
         specifier: ^5.0.0
         version: 5.6.2
