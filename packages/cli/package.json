@@ -5,12 +5,12 @@
   "license": "PolyForm-Noncommercial-1.0.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/unikortex/unikortex.git",
+    "url": "https://github.com/ruslan-sazonov/UniKortex.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/unikortex/unikortex#readme",
+  "homepage": "https://github.com/ruslan-sazonov/UniKortex#readme",
   "bugs": {
-    "url": "https://github.com/unikortex/unikortex/issues"
+    "url": "https://github.com/ruslan-sazonov/UniKortex/issues"
   },
   "keywords": ["cli", "knowledge-base", "ai", "mcp", "claude", "chatgpt", "gemini"],
   "type": "module",
@@ -22,7 +22,8 @@
   "files": [
     "dist",
     "bin",
-    "scripts"
+    "scripts",
+    "README.md"
   ],
   "scripts": {
     "build": "tsup",
