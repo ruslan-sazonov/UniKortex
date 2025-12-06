@@ -1,5 +1,9 @@
 import { Command } from 'commander';
+import { createRequire } from 'node:module';
 import { initCommand } from './commands/init.js';
+
+const require = createRequire(import.meta.url);
+const { version } = require('../package.json');
 import { addCommand } from './commands/add.js';
 import { listCommand } from './commands/list.js';
 import { showCommand } from './commands/show.js';
@@ -23,7 +27,7 @@ import { serveCommand } from './commands/serve.js';
 
 const program = new Command();
 
-program.name('unikortex').description('Unified Knowledge Base for AI Workflows').version('0.1.0');
+program.name('unikortex').description('Unified Knowledge Base for AI Workflows').version(version);
 
 // Register commands
 program.addCommand(initCommand);
