@@ -1,5 +1,11 @@
 # UniKortex
 
+[![npm version](https://img.shields.io/npm/v/@unikortex/cli.svg)](https://www.npmjs.com/package/@unikortex/cli)
+[![CI](https://github.com/ruslan-sazonov/UniKortex/actions/workflows/ci.yml/badge.svg)](https://github.com/ruslan-sazonov/UniKortex/actions/workflows/ci.yml)
+[![License: PolyForm Noncommercial](https://img.shields.io/badge/License-PolyForm%20Noncommercial-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](https://nodejs.org/)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io/)
+
 **Unified Knowledge Base for AI Workflows**
 
 UniKortex is a persistent knowledge management system designed for AI-assisted development. It captures decisions, research, and artifacts from your AI conversations, making them searchable and reusable across sessions and projects.
@@ -42,8 +48,8 @@ brew install unikortex/tap/unikortex
 ### From source
 
 ```bash
-git clone https://github.com/unikortex/unikortex.git
-cd unikortex
+git clone https://github.com/ruslan-sazonov/UniKortex.git
+cd UniKortex
 pnpm install
 pnpm build
 npm link -g packages/cli
@@ -282,8 +288,8 @@ When connected via MCP, AI assistants have access to:
 ### Setup
 
 ```bash
-git clone https://github.com/unikortex/unikortex.git
-cd unikortex
+git clone https://github.com/ruslan-sazonov/UniKortex.git
+cd UniKortex
 pnpm install
 pnpm build
 ```
