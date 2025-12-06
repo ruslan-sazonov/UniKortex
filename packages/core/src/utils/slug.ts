@@ -3,19 +3,21 @@
  * Used for generating file names from entry titles
  */
 export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .trim()
-    // Replace spaces and underscores with hyphens
-    .replace(/[\s_]+/g, '-')
-    // Remove non-alphanumeric characters except hyphens
-    .replace(/[^a-z0-9-]/g, '')
-    // Replace multiple consecutive hyphens with single hyphen
-    .replace(/-+/g, '-')
-    // Remove leading/trailing hyphens
-    .replace(/^-|-$/g, '')
-    // Limit length
-    .slice(0, 100);
+  return (
+    text
+      .toLowerCase()
+      .trim()
+      // Replace spaces and underscores with hyphens
+      .replace(/[\s_]+/g, '-')
+      // Remove non-alphanumeric characters except hyphens
+      .replace(/[^a-z0-9-]/g, '')
+      // Replace multiple consecutive hyphens with single hyphen
+      .replace(/-+/g, '-')
+      // Remove leading/trailing hyphens
+      .replace(/^-|-$/g, '')
+      // Limit length
+      .slice(0, 100)
+  );
 }
 
 /**

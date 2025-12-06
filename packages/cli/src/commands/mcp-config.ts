@@ -51,7 +51,9 @@ function printClaudeDesktop(homeDir: string) {
   console.log(JSON.stringify(getClaudeDesktopConfig(homeDir), null, 2));
   console.log('');
   console.log(chalk.dim('Config file locations:'));
-  console.log(chalk.dim(`  macOS: ~/Library/Application Support/Claude/claude_desktop_config.json`));
+  console.log(
+    chalk.dim(`  macOS: ~/Library/Application Support/Claude/claude_desktop_config.json`)
+  );
   console.log(chalk.dim(`  Windows: %APPDATA%\\Claude\\claude_desktop_config.json`));
   console.log(chalk.dim(`  Linux: ~/.config/Claude/claude_desktop_config.json`));
 }
@@ -59,7 +61,9 @@ function printClaudeDesktop(homeDir: string) {
 function printClaudeCode() {
   console.log(chalk.bold.cyan('━━━ Claude Code ━━━'));
   console.log(chalk.dim('Run this command to add the MCP server:\n'));
-  console.log(chalk.green('claude mcp add --transport stdio unikortex -- npx -y @unikortex/cli mcp'));
+  console.log(
+    chalk.green('claude mcp add --transport stdio unikortex -- npx -y @unikortex/cli mcp')
+  );
   console.log('');
   console.log(chalk.dim('Options:'));
   console.log(chalk.dim('  --scope user     Add to user config (default: local/project)'));
@@ -85,7 +89,9 @@ function printAntigravity() {
   console.log('');
   console.log(chalk.dim('Config file location:'));
   console.log(chalk.dim(`  ~/.gemini/antigravity/mcp_config.json`));
-  console.log(chalk.dim('Or: Agent session → "..." → MCP Servers → Manage MCP Servers → View raw config'));
+  console.log(
+    chalk.dim('Or: Agent session → "..." → MCP Servers → Manage MCP Servers → View raw config')
+  );
 }
 
 export const mcpConfigCommand = new Command('mcp-config')
@@ -122,7 +128,9 @@ export const mcpConfigCommand = new Command('mcp-config')
       printAntigravity();
     } else {
       console.error(chalk.red(`Unknown format: ${format}`));
-      console.error(chalk.dim('Available formats: all, claude-desktop, claude-code, gemini-cli, antigravity'));
+      console.error(
+        chalk.dim('Available formats: all, claude-desktop, claude-code, gemini-cli, antigravity')
+      );
       process.exit(1);
     }
   });

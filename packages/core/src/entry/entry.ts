@@ -137,7 +137,10 @@ export class EntryService {
     // Skip headers at the beginning
     const lines = text.split('\n');
     let startIdx = 0;
-    while (startIdx < lines.length && (lines[startIdx]?.startsWith('#') || lines[startIdx]?.trim() === '')) {
+    while (
+      startIdx < lines.length &&
+      (lines[startIdx]?.startsWith('#') || lines[startIdx]?.trim() === '')
+    ) {
       startIdx++;
     }
 
@@ -159,10 +162,7 @@ export class EntryService {
 
   private truncateSummary(text: string, maxLength: number = 500): string {
     // Clean up the text
-    let cleaned = text
-      .replace(/\n+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const cleaned = text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
 
     if (cleaned.length <= maxLength) {
       return cleaned;

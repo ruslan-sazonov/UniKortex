@@ -147,7 +147,9 @@ export class VaultSyncService {
       if (!dir.isDirectory()) continue;
 
       const projectDir = path.join(this.vaultPath, dir.name);
-      const files = fs.readdirSync(projectDir).filter((f) => f.endsWith('.md') && f !== 'README.md');
+      const files = fs
+        .readdirSync(projectDir)
+        .filter((f) => f.endsWith('.md') && f !== 'README.md');
 
       for (const file of files) {
         try {

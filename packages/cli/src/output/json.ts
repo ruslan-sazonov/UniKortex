@@ -15,7 +15,11 @@ export function formatProjectsJson(projects: Project[], activeProject?: string):
     ...p,
     isActive: p.name === activeProject,
   }));
-  return JSON.stringify({ projects: projectsWithActive, activeProject: activeProject ?? null }, null, 2);
+  return JSON.stringify(
+    { projects: projectsWithActive, activeProject: activeProject ?? null },
+    null,
+    2
+  );
 }
 
 /**

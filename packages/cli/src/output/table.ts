@@ -72,20 +72,13 @@ export function formatProjectsTable(projects: Project[], activeProject?: string)
 /**
  * Format relations as a table
  */
-export function formatRelationsTable(
-  relations: EntryRelation[],
-  currentEntryId: string
-): string {
+export function formatRelationsTable(relations: EntryRelation[], currentEntryId: string): string {
   if (relations.length === 0) {
     return chalk.dim('No relations found.');
   }
 
   const table = new Table({
-    head: [
-      chalk.bold('Direction'),
-      chalk.bold('Related Entry'),
-      chalk.bold('Relation Type'),
-    ],
+    head: [chalk.bold('Direction'), chalk.bold('Related Entry'), chalk.bold('Relation Type')],
     colWidths: [12, 30, 15],
   });
 

@@ -23,10 +23,7 @@ import { serveCommand } from './commands/serve.js';
 
 const program = new Command();
 
-program
-  .name('unikortex')
-  .description('Unified Knowledge Base for AI Workflows')
-  .version('0.1.0');
+program.name('unikortex').description('Unified Knowledge Base for AI Workflows').version('0.1.0');
 
 // Register commands
 program.addCommand(initCommand);

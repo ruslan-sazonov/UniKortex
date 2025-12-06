@@ -23,7 +23,13 @@ function getClaudeConfigPath(): string | null {
 
   switch (process.platform) {
     case 'darwin':
-      return path.join(homeDir, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json');
+      return path.join(
+        homeDir,
+        'Library',
+        'Application Support',
+        'Claude',
+        'claude_desktop_config.json'
+      );
     case 'win32':
       return path.join(process.env.APPDATA ?? homeDir, 'Claude', 'claude_desktop_config.json');
     case 'linux':
@@ -139,7 +145,9 @@ export const initCommand = new Command('init')
 
       // Claude Code
       console.log(chalk.bold('💻 Claude Code:'));
-      console.log(chalk.cyan('  claude mcp add --transport stdio unikortex -- npx -y @unikortex/cli mcp'));
+      console.log(
+        chalk.cyan('  claude mcp add --transport stdio unikortex -- npx -y @unikortex/cli mcp')
+      );
       console.log(chalk.dim('  Add --scope user for global access'));
       console.log('');
 

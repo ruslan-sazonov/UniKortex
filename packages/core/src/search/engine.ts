@@ -42,11 +42,7 @@ export class HybridSearchEngine {
   private embeddingService: EmbeddingService | null;
   private vectorStore: VectorStore | null;
 
-  constructor(
-    storage: Storage,
-    embeddingService?: EmbeddingService,
-    vectorStore?: VectorStore
-  ) {
+  constructor(storage: Storage, embeddingService?: EmbeddingService, vectorStore?: VectorStore) {
     this.storage = storage;
     this.embeddingService = embeddingService ?? null;
     this.vectorStore = vectorStore ?? null;

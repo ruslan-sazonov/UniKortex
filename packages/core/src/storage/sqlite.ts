@@ -468,11 +468,7 @@ export class SQLiteStorage implements Storage {
       };
     } catch (error) {
       if ((error as { code?: string }).code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
-        throw new StorageError(
-          'Relation already exists',
-          StorageErrorCodes.ALREADY_EXISTS,
-          error
-        );
+        throw new StorageError('Relation already exists', StorageErrorCodes.ALREADY_EXISTS, error);
       }
       if ((error as { code?: string }).code === 'SQLITE_CONSTRAINT_FOREIGNKEY') {
         throw new StorageError('One or both entries not found', StorageErrorCodes.NOT_FOUND, error);
@@ -483,9 +479,7 @@ export class SQLiteStorage implements Storage {
 
   async getRelation(fromId: string, toId: string): Promise<EntryRelation | null> {
     const db = this.getDb();
-    const stmt = db.prepare(
-      'SELECT * FROM entry_relations WHERE from_id = ? AND to_id = ?'
-    );
+    const stmt = db.prepare('SELECT * FROM entry_relations WHERE from_id = ? AND to_id = ?');
     const row = stmt.get(fromId, toId) as RelationRow | undefined;
 
     return row ? this.rowToRelation(row) : null;
@@ -551,8 +545,7 @@ export class SQLiteStorage implements Storage {
       filterParams.push(...filters.status);
     }
 
-    const filterWhere =
-      filterConditions.length > 0 ? `AND ${filterConditions.join(' AND ')}` : '';
+    const filterWhere = filterConditions.length > 0 ? `AND ${filterConditions.join(' AND ')}` : '';
 
     // FTS5 search with ranking
     const countStmt = db.prepare(`

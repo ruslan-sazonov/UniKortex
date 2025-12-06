@@ -16,10 +16,7 @@ export class OllamaProvider implements IEmbeddingProvider {
   private model: string;
   private initialized = false;
 
-  constructor(
-    host: string = 'http://localhost:11434',
-    model: string = 'nomic-embed-text'
-  ) {
+  constructor(host: string = 'http://localhost:11434', model: string = 'nomic-embed-text') {
     this.host = host.replace(/\/$/, ''); // Remove trailing slash
     this.model = model;
 

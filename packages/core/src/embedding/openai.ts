@@ -16,11 +16,7 @@ export class OpenAIProvider implements IEmbeddingProvider {
   private model: string;
   private initialized = false;
 
-  constructor(
-    apiKey?: string,
-    model: string = 'text-embedding-3-small',
-    dimensions: number = 512
-  ) {
+  constructor(apiKey?: string, model: string = 'text-embedding-3-small', dimensions: number = 512) {
     this.apiKey = apiKey ?? process.env['OPENAI_API_KEY'] ?? '';
     this.model = model;
     this.dimensions = dimensions;

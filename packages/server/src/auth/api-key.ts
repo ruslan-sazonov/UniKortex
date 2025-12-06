@@ -51,10 +51,7 @@ export interface AuthContext {
  * Create API key authentication middleware
  */
 export function createApiKeyAuth(storage: PostgresStorage) {
-  return async function authenticate(
-    request: FastifyRequest,
-    reply: FastifyReply
-  ): Promise<void> {
+  return async function authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const key = extractApiKey(request);
 
     if (!key) {

@@ -1,11 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { withContext } from '../utils/context.js';
-import {
-  HybridSearchEngine,
-  EmbeddingService,
-  VectorStore,
-} from '@unikortex/core';
+import { HybridSearchEngine, EmbeddingService, VectorStore } from '@unikortex/core';
 
 export const reindexCommand = new Command('reindex')
   .description('Rebuild the search index for semantic search')
@@ -51,11 +47,7 @@ export const reindexCommand = new Command('reindex')
         }
 
         // Create search engine and reindex
-        const searchEngine = new HybridSearchEngine(
-          ctx.storage,
-          embeddingService,
-          vectorStore
-        );
+        const searchEngine = new HybridSearchEngine(ctx.storage, embeddingService, vectorStore);
 
         console.log(chalk.blue('Indexing entries...'));
         const count = await searchEngine.reindexAll((current, total) => {

@@ -39,10 +39,7 @@ export class VectorStore {
     } catch (error) {
       // sqlite-vec might not be available, that's okay
       // Search will fall back to FTS5 only
-      console.warn(
-        'sqlite-vec extension not available. Semantic search will be disabled.',
-        error
-      );
+      console.warn('sqlite-vec extension not available. Semantic search will be disabled.', error);
     }
   }
 

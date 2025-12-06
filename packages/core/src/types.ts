@@ -22,9 +22,13 @@ export type RelationType = z.infer<typeof RelationType>;
 export const ProjectSchema = z.object({
   id: z.string(),
   workspaceId: z.string().optional(), // Only used in team mode
-  name: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, {
-    message: 'Project name must be lowercase alphanumeric with hyphens',
-  }),
+  name: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-z0-9-]+$/, {
+      message: 'Project name must be lowercase alphanumeric with hyphens',
+    }),
   displayName: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
   createdAt: z.date(),
@@ -73,9 +77,13 @@ export type EntryRelation = z.infer<typeof EntryRelationSchema>;
 // === Input Schemas (for creation/updates) ===
 
 export const CreateProjectInput = z.object({
-  name: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, {
-    message: 'Project name must be lowercase alphanumeric with hyphens',
-  }),
+  name: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-z0-9-]+$/, {
+      message: 'Project name must be lowercase alphanumeric with hyphens',
+    }),
   displayName: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
 });

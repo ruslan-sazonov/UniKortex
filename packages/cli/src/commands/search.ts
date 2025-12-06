@@ -4,12 +4,7 @@ import { withContext } from '../utils/context.js';
 import { formatEntriesTable } from '../output/table.js';
 import { formatEntriesJson, formatEntryIds } from '../output/json.js';
 import type { EntryType, EntryStatus, SearchMode } from '@unikortex/core';
-import {
-  HybridSearchEngine,
-  EmbeddingService,
-  VectorStore,
-  loadConfig,
-} from '@unikortex/core';
+import { HybridSearchEngine, EmbeddingService, VectorStore, loadConfig } from '@unikortex/core';
 
 interface SearchOptions {
   project?: string;
@@ -106,11 +101,7 @@ export const searchCommand = new Command('search')
           }
         }
 
-        const searchEngine = new HybridSearchEngine(
-          ctx.storage,
-          embeddingService,
-          vectorStore
-        );
+        const searchEngine = new HybridSearchEngine(ctx.storage, embeddingService, vectorStore);
 
         const results = await searchEngine.search({
           query,

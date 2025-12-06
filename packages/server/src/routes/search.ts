@@ -5,7 +5,6 @@ import {
   HybridSearchEngine,
   ContextRetriever,
   EmbeddingService,
-  VectorStore,
   type EntryFilters,
 } from '@unikortex/core';
 import type { ServerConfig } from '../config.js';
@@ -48,7 +47,7 @@ export function createSearchRoutes(
       contextRetriever = new ContextRetriever(storage, embeddingService);
 
       fastify.log.info(`Initialized embeddings with ${embeddingService.providerName}`);
-    } catch (error) {
+    } catch {
       fastify.log.warn('Embeddings not available, using keyword-only search');
       searchEngine = new HybridSearchEngine(storage);
       contextRetriever = new ContextRetriever(storage);
@@ -103,40 +102,43 @@ export function createSearchRoutes(
     });
 
     // Context endpoint - for LLM consumption
-    fastify.get<{ Querystring: z.infer<typeof contextQuerySchema> }>('/context', async (request) => {
-      const parsed = contextQuerySchema.parse(request.query);
+    fastify.get<{ Querystring: z.infer<typeof contextQuerySchema> }>(
+      '/context',
+      async (request) => {
+        const parsed = contextQuerySchema.parse(request.query);
 
-      let projectId: string | undefined;
-      if (parsed.project) {
-        const project = await storage.getProjectByName(parsed.project);
-        if (project) {
-          projectId = project.id;
+        let projectId: string | undefined;
+        if (parsed.project) {
+          const project = await storage.getProjectByName(parsed.project);
+          if (project) {
+            projectId = project.id;
+          }
         }
+
+        const result = await contextRetriever.retrieve({
+          query: parsed.q,
+          maxTokens: parsed.maxTokens,
+          maxItems: parsed.maxItems,
+          filters: { projectId },
+        });
+
+        if (parsed.format === 'json') {
+          return result;
+        }
+
+        const formatted = contextRetriever.formatForLLM(
+          result,
+          parsed.format as 'xml' | 'markdown'
+        );
+
+        return {
+          content: formatted,
+          itemCount: result.items.length,
+          tokensEstimate: result.totalTokensEstimate,
+          truncated: result.truncated,
+        };
       }
-
-      const result = await contextRetriever.retrieve({
-        query: parsed.q,
-        maxTokens: parsed.maxTokens,
-        maxItems: parsed.maxItems,
-        filters: { projectId },
-      });
-
-      if (parsed.format === 'json') {
-        return result;
-      }
-
-      const formatted = contextRetriever.formatForLLM(
-        result,
-        parsed.format as 'xml' | 'markdown'
-      );
-
-      return {
-        content: formatted,
-        itemCount: result.items.length,
-        tokensEstimate: result.totalTokensEstimate,
-        truncated: result.truncated,
-      };
-    });
+    );
 
     // POST endpoint for context (for complex queries)
     fastify.post<{
@@ -153,7 +155,14 @@ export function createSearchRoutes(
         };
       };
     }>('/context', async (request) => {
-      const { query, project, maxTokens = 4000, maxItems = 10, format = 'xml', filters } = request.body;
+      const {
+        query,
+        project,
+        maxTokens = 4000,
+        maxItems = 10,
+        format = 'xml',
+        filters,
+      } = request.body;
 
       let projectId: string | undefined;
       if (project) {

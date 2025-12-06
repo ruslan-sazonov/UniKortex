@@ -64,9 +64,7 @@ async function getContext(): Promise<AppContext> {
   }
 
   if (!isInitialized()) {
-    throw new Error(
-      'UniKortex is not initialized. Run "unikortex init" first.'
-    );
+    throw new Error('UniKortex is not initialized. Run "unikortex init" first.');
   }
 
   const config = loadConfig();
@@ -131,10 +129,22 @@ async function main() {
     {
       title: z.string().describe('Short descriptive title for the entry'),
       content: z.string().describe('The content to save (Markdown supported)'),
-      project: z.string().optional().describe('Project name to save under (optional - uses active project if set, will create if doesn\'t exist)'),
-      type: z.enum(['decision', 'research', 'artifact', 'note', 'reference']).describe('Type of entry'),
+      project: z
+        .string()
+        .optional()
+        .describe(
+          "Project name to save under (optional - uses active project if set, will create if doesn't exist)"
+        ),
+      type: z
+        .enum(['decision', 'research', 'artifact', 'note', 'reference'])
+        .describe('Type of entry'),
       tags: z.array(z.string()).optional().describe('Tags for categorization'),
-      contextSummary: z.string().optional().describe('Brief summary for search optimization (optional, auto-generated if not provided)'),
+      contextSummary: z
+        .string()
+        .optional()
+        .describe(
+          'Brief summary for search optimization (optional, auto-generated if not provided)'
+        ),
     },
     async ({ title, content, project: projectName, type, tags, contextSummary }) => {
       try {
@@ -146,10 +156,15 @@ async function main() {
             content: [
               {
                 type: 'text' as const,
-                text: JSON.stringify({
-                  success: false,
-                  error: 'No project specified and no active project set. Either provide a project name or set an active project with unikortex_set_project.',
-                }, null, 2),
+                text: JSON.stringify(
+                  {
+                    success: false,
+                    error:
+                      'No project specified and no active project set. Either provide a project name or set an active project with unikortex_set_project.',
+                  },
+                  null,
+                  2
+                ),
               },
             ],
             isError: true,
@@ -188,13 +203,17 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                success: true,
-                id: entry.id,
-                title: entry.title,
-                project: project.name,
-                message: `Saved "${entry.title}" to project "${project.name}"`,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: true,
+                  id: entry.id,
+                  title: entry.title,
+                  project: project.name,
+                  message: `Saved "${entry.title}" to project "${project.name}"`,
+                },
+                null,
+                2
+              ),
             },
           ],
         };
@@ -203,10 +222,14 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                success: false,
-                error: (error as Error).message,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: false,
+                  error: (error as Error).message,
+                },
+                null,
+                2
+              ),
             },
           ],
           isError: true,
@@ -222,9 +245,18 @@ async function main() {
     'Search the knowledge base for relevant entries. Use this when the user asks about past decisions, wants to find previous research, or needs context from earlier work. By default, searches within the active project if one is set.',
     {
       query: z.string().describe('Natural language search query'),
-      project: z.string().optional().describe('Filter to specific project (optional - defaults to active project if set)'),
-      allProjects: z.boolean().optional().describe('Search all projects, ignoring active project filter (default: false)'),
-      type: z.enum(['decision', 'research', 'artifact', 'note', 'reference']).optional().describe('Filter by entry type (optional)'),
+      project: z
+        .string()
+        .optional()
+        .describe('Filter to specific project (optional - defaults to active project if set)'),
+      allProjects: z
+        .boolean()
+        .optional()
+        .describe('Search all projects, ignoring active project filter (default: false)'),
+      type: z
+        .enum(['decision', 'research', 'artifact', 'note', 'reference'])
+        .optional()
+        .describe('Filter by entry type (optional)'),
       limit: z.number().optional().default(5).describe('Maximum results to return (default: 5)'),
     },
     async ({ query, project: projectName, allProjects, type, limit }) => {
@@ -249,7 +281,9 @@ async function main() {
           // Use active project if set
           projectId = await getActiveProjectId(ctx);
           const activeProjectName = getActiveProjectName();
-          scopeDescription = activeProjectName ? `project "${activeProjectName}" (active)` : 'all projects';
+          scopeDescription = activeProjectName
+            ? `project "${activeProjectName}" (active)`
+            : 'all projects';
         }
 
         const results = await ctx.searchEngine!.search({
@@ -284,12 +318,16 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                results: formattedResults,
-                totalFound: results.length,
-                searchQuery: query,
-                scope: scopeDescription,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  results: formattedResults,
+                  totalFound: results.length,
+                  searchQuery: query,
+                  scope: scopeDescription,
+                },
+                null,
+                2
+              ),
             },
           ],
         };
@@ -298,10 +336,14 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                success: false,
-                error: (error as Error).message,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: false,
+                  error: (error as Error).message,
+                },
+                null,
+                2
+              ),
             },
           ],
           isError: true,
@@ -328,10 +370,14 @@ async function main() {
             content: [
               {
                 type: 'text' as const,
-                text: JSON.stringify({
-                  success: false,
-                  error: `Entry with ID "${id}" not found`,
-                }, null, 2),
+                text: JSON.stringify(
+                  {
+                    success: false,
+                    error: `Entry with ID "${id}" not found`,
+                  },
+                  null,
+                  2
+                ),
               },
             ],
             isError: true,
@@ -385,10 +431,14 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                success: false,
-                error: (error as Error).message,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: false,
+                  error: (error as Error).message,
+                },
+                null,
+                2
+              ),
             },
           ],
           isError: true,
@@ -420,11 +470,15 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                projects: formattedProjects,
-                total: projects.length,
-                activeProject: activeProjectName ?? null,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  projects: formattedProjects,
+                  total: projects.length,
+                  activeProject: activeProjectName ?? null,
+                },
+                null,
+                2
+              ),
             },
           ],
         };
@@ -433,10 +487,14 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                success: false,
-                error: (error as Error).message,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: false,
+                  error: (error as Error).message,
+                },
+                null,
+                2
+              ),
             },
           ],
           isError: true,
@@ -453,7 +511,10 @@ async function main() {
     {
       id: z.string().describe('Entry ID to update'),
       status: z.enum(['draft', 'active', 'superseded', 'archived']).describe('New status'),
-      supersededBy: z.string().optional().describe('ID of entry that supersedes this one (when status=superseded)'),
+      supersededBy: z
+        .string()
+        .optional()
+        .describe('ID of entry that supersedes this one (when status=superseded)'),
     },
     async ({ id, status, supersededBy }) => {
       try {
@@ -464,10 +525,14 @@ async function main() {
             content: [
               {
                 type: 'text' as const,
-                text: JSON.stringify({
-                  success: false,
-                  error: `Entry with ID "${id}" not found`,
-                }, null, 2),
+                text: JSON.stringify(
+                  {
+                    success: false,
+                    error: `Entry with ID "${id}" not found`,
+                  },
+                  null,
+                  2
+                ),
               },
             ],
             isError: true,
@@ -488,13 +553,17 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                success: true,
-                id: updated?.id,
-                title: updated?.title,
-                status: updated?.status,
-                message: `Updated status of "${updated?.title}" to "${status}"`,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: true,
+                  id: updated?.id,
+                  title: updated?.title,
+                  status: updated?.status,
+                  message: `Updated status of "${updated?.title}" to "${status}"`,
+                },
+                null,
+                2
+              ),
             },
           ],
         };
@@ -503,10 +572,14 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                success: false,
-                error: (error as Error).message,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: false,
+                  error: (error as Error).message,
+                },
+                null,
+                2
+              ),
             },
           ],
           isError: true,
@@ -522,10 +595,24 @@ async function main() {
     'Get relevant context from the knowledge base formatted for LLM consumption. Use this to retrieve multiple relevant entries at once. By default, retrieves context from the active project if one is set.',
     {
       query: z.string().describe('Query to find relevant context'),
-      project: z.string().optional().describe('Filter to specific project (optional - defaults to active project if set)'),
-      allProjects: z.boolean().optional().describe('Search all projects, ignoring active project filter (default: false)'),
-      maxTokens: z.number().optional().default(4000).describe('Maximum tokens to return (default: 4000)'),
-      format: z.enum(['xml', 'markdown']).optional().default('xml').describe('Output format (default: xml)'),
+      project: z
+        .string()
+        .optional()
+        .describe('Filter to specific project (optional - defaults to active project if set)'),
+      allProjects: z
+        .boolean()
+        .optional()
+        .describe('Search all projects, ignoring active project filter (default: false)'),
+      maxTokens: z
+        .number()
+        .optional()
+        .default(4000)
+        .describe('Maximum tokens to return (default: 4000)'),
+      format: z
+        .enum(['xml', 'markdown'])
+        .optional()
+        .default('xml')
+        .describe('Output format (default: xml)'),
     },
     async ({ query, project: projectName, allProjects, maxTokens, format }) => {
       try {
@@ -568,10 +655,14 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                success: false,
-                error: (error as Error).message,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: false,
+                  error: (error as Error).message,
+                },
+                null,
+                2
+              ),
             },
           ],
           isError: true,
@@ -600,11 +691,15 @@ async function main() {
             content: [
               {
                 type: 'text' as const,
-                text: JSON.stringify({
-                  success: false,
-                  error: `Project "${projectName}" not found`,
-                  availableProjects: projects.map((p) => p.name),
-                }, null, 2),
+                text: JSON.stringify(
+                  {
+                    success: false,
+                    error: `Project "${projectName}" not found`,
+                    availableProjects: projects.map((p) => p.name),
+                  },
+                  null,
+                  2
+                ),
               },
             ],
             isError: true,
@@ -618,11 +713,15 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                success: true,
-                activeProject: projectName,
-                message: `Active project set to "${projectName}". All searches and saves will now default to this project.`,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: true,
+                  activeProject: projectName,
+                  message: `Active project set to "${projectName}". All searches and saves will now default to this project.`,
+                },
+                null,
+                2
+              ),
             },
           ],
         };
@@ -631,10 +730,14 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                success: false,
-                error: (error as Error).message,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: false,
+                  error: (error as Error).message,
+                },
+                null,
+                2
+              ),
             },
           ],
           isError: true,
@@ -658,11 +761,15 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                success: true,
-                previousProject: previousProject ?? null,
-                message: 'Active project cleared. Searches will now include all projects.',
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: true,
+                  previousProject: previousProject ?? null,
+                  message: 'Active project cleared. Searches will now include all projects.',
+                },
+                null,
+                2
+              ),
             },
           ],
         };
@@ -671,10 +778,14 @@ async function main() {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                success: false,
-                error: (error as Error).message,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: false,
+                  error: (error as Error).message,
+                },
+                null,
+                2
+              ),
             },
           ],
           isError: true,
@@ -702,7 +813,7 @@ async function main() {
 
 ## Current State
 - Active project: ${activeProject ?? 'None (global scope)'}
-- Available projects: ${projects.map(p => p.name).join(', ') || 'None'}
+- Available projects: ${projects.map((p) => p.name).join(', ') || 'None'}
 
 ## When to Use UniKortex
 

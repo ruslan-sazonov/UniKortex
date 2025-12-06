@@ -33,9 +33,7 @@ export async function getContext(): Promise<AppContext> {
   }
 
   if (!isInitialized()) {
-    throw new Error(
-      'UniKortex is not initialized. Run "unikortex init" first.'
-    );
+    throw new Error('UniKortex is not initialized. Run "unikortex init" first.');
   }
 
   const config = loadConfig();

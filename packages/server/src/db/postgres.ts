@@ -152,18 +152,12 @@ export class PostgresStorage implements Storage {
   }
 
   async getProject(id: string): Promise<Project | null> {
-    const result = await this.pool.query(
-      'SELECT * FROM projects WHERE id = $1',
-      [id]
-    );
+    const result = await this.pool.query('SELECT * FROM projects WHERE id = $1', [id]);
     return result.rows[0] ? this.rowToProject(result.rows[0]) : null;
   }
 
   async getProjectByName(name: string): Promise<Project | null> {
-    const result = await this.pool.query(
-      'SELECT * FROM projects WHERE name = $1',
-      [name]
-    );
+    const result = await this.pool.query('SELECT * FROM projects WHERE name = $1', [name]);
     return result.rows[0] ? this.rowToProject(result.rows[0]) : null;
   }
 
@@ -196,17 +190,12 @@ export class PostgresStorage implements Storage {
   }
 
   async deleteProject(id: string): Promise<boolean> {
-    const result = await this.pool.query(
-      'DELETE FROM projects WHERE id = $1',
-      [id]
-    );
+    const result = await this.pool.query('DELETE FROM projects WHERE id = $1', [id]);
     return (result.rowCount ?? 0) > 0;
   }
 
   async listProjects(): Promise<Project[]> {
-    const result = await this.pool.query(
-      'SELECT * FROM projects ORDER BY created_at DESC'
-    );
+    const result = await this.pool.query('SELECT * FROM projects ORDER BY created_at DESC');
     return result.rows.map((row) => this.rowToProject(row));
   }
 
@@ -244,10 +233,7 @@ export class PostgresStorage implements Storage {
   }
 
   async getEntry(id: string): Promise<Entry | null> {
-    const result = await this.pool.query(
-      'SELECT * FROM entries WHERE id = $1',
-      [id]
-    );
+    const result = await this.pool.query('SELECT * FROM entries WHERE id = $1', [id]);
 
     if (!result.rows[0]) return null;
 
@@ -306,10 +292,7 @@ export class PostgresStorage implements Storage {
   }
 
   async deleteEntry(id: string): Promise<boolean> {
-    const result = await this.pool.query(
-      'DELETE FROM entries WHERE id = $1',
-      [id]
-    );
+    const result = await this.pool.query('DELETE FROM entries WHERE id = $1', [id]);
     return (result.rowCount ?? 0) > 0;
   }
 
@@ -384,17 +367,15 @@ export class PostgresStorage implements Storage {
 
     if (tags.length > 0) {
       const values = tags.map((tag, i) => `($1, $${i + 2})`).join(', ');
-      await this.pool.query(
-        `INSERT INTO entry_tags (entry_id, tag) VALUES ${values}`,
-        [entryId, ...tags]
-      );
+      await this.pool.query(`INSERT INTO entry_tags (entry_id, tag) VALUES ${values}`, [
+        entryId,
+        ...tags,
+      ]);
     }
   }
 
   async getAllTags(): Promise<string[]> {
-    const result = await this.pool.query(
-      'SELECT DISTINCT tag FROM entry_tags ORDER BY tag'
-    );
+    const result = await this.pool.query('SELECT DISTINCT tag FROM entry_tags ORDER BY tag');
     return result.rows.map((row) => row.tag);
   }
 
@@ -461,7 +442,9 @@ export class PostgresStorage implements Storage {
     let paramIndex = 1;
 
     // Full-text search
-    conditions.push(`to_tsvector('english', title || ' ' || content || ' ' || COALESCE(context_summary, '')) @@ plainto_tsquery('english', $${paramIndex++})`);
+    conditions.push(
+      `to_tsvector('english', title || ' ' || content || ' ' || COALESCE(context_summary, '')) @@ plainto_tsquery('english', $${paramIndex++})`
+    );
     values.push(query);
 
     if (filters?.projectId) {
@@ -517,7 +500,11 @@ export class PostgresStorage implements Storage {
 
   // === User Management (Team Mode) ===
 
-  async createUser(email: string, name: string, passwordHash?: string): Promise<{ id: string; email: string; name: string }> {
+  async createUser(
+    email: string,
+    name: string,
+    passwordHash?: string
+  ): Promise<{ id: string; email: string; name: string }> {
     const id = generateId();
     const result = await this.pool.query(
       `INSERT INTO users (id, email, name, password_hash)
@@ -528,7 +515,9 @@ export class PostgresStorage implements Storage {
     return result.rows[0];
   }
 
-  async getUserByEmail(email: string): Promise<{ id: string; email: string; name: string; passwordHash?: string } | null> {
+  async getUserByEmail(
+    email: string
+  ): Promise<{ id: string; email: string; name: string; passwordHash?: string } | null> {
     const result = await this.pool.query(
       'SELECT id, email, name, password_hash as "passwordHash" FROM users WHERE email = $1',
       [email]
@@ -537,16 +526,18 @@ export class PostgresStorage implements Storage {
   }
 
   async getUserById(id: string): Promise<{ id: string; email: string; name: string } | null> {
-    const result = await this.pool.query(
-      'SELECT id, email, name FROM users WHERE id = $1',
-      [id]
-    );
+    const result = await this.pool.query('SELECT id, email, name FROM users WHERE id = $1', [id]);
     return result.rows[0] ?? null;
   }
 
   // === API Keys ===
 
-  async createApiKey(userId: string, keyHash: string, name: string, expiresAt?: Date): Promise<{ id: string }> {
+  async createApiKey(
+    userId: string,
+    keyHash: string,
+    name: string,
+    expiresAt?: Date
+  ): Promise<{ id: string }> {
     const id = generateId();
     await this.pool.query(
       `INSERT INTO api_keys (id, user_id, key_hash, name, expires_at)
@@ -556,7 +547,9 @@ export class PostgresStorage implements Storage {
     return { id };
   }
 
-  async getApiKeyByHash(keyHash: string): Promise<{ id: string; userId: string; expiresAt?: Date } | null> {
+  async getApiKeyByHash(
+    keyHash: string
+  ): Promise<{ id: string; userId: string; expiresAt?: Date } | null> {
     const result = await this.pool.query(
       `SELECT id, user_id as "userId", expires_at as "expiresAt"
        FROM api_keys
@@ -567,10 +560,7 @@ export class PostgresStorage implements Storage {
   }
 
   async updateApiKeyLastUsed(id: string): Promise<void> {
-    await this.pool.query(
-      'UPDATE api_keys SET last_used_at = NOW() WHERE id = $1',
-      [id]
-    );
+    await this.pool.query('UPDATE api_keys SET last_used_at = NOW() WHERE id = $1', [id]);
   }
 
   // === Helpers ===

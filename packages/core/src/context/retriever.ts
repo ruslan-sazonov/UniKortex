@@ -50,11 +50,7 @@ export class ContextRetriever {
   private storage: Storage;
   private searchEngine: HybridSearchEngine;
 
-  constructor(
-    storage: Storage,
-    embeddingService?: EmbeddingService,
-    vectorStore?: VectorStore
-  ) {
+  constructor(storage: Storage, embeddingService?: EmbeddingService, vectorStore?: VectorStore) {
     this.storage = storage;
     this.searchEngine = new HybridSearchEngine(storage, embeddingService, vectorStore);
   }
@@ -63,13 +59,7 @@ export class ContextRetriever {
    * Retrieve relevant context for a query
    */
   async retrieve(options: ContextRetrievalOptions): Promise<ContextRetrievalResult> {
-    const {
-      query,
-      maxTokens = 4000,
-      maxItems = 10,
-      filters,
-      includeRelated = false,
-    } = options;
+    const { query, maxTokens = 4000, maxItems = 10, filters, includeRelated = false } = options;
 
     // Search for relevant entries with strict minimum score
     // Context for LLM should only include truly relevant items
@@ -262,16 +252,12 @@ ${entries.join('\n')}
   /**
    * Get related items for an entry
    */
-  private async getRelatedItems(
-    entryId: string,
-    seenIds: Set<string>
-  ): Promise<ContextItem[]> {
+  private async getRelatedItems(entryId: string, seenIds: Set<string>): Promise<ContextItem[]> {
     const relations = await this.storage.getEntryRelations(entryId);
     const items: ContextItem[] = [];
 
     for (const relation of relations) {
-      const relatedId =
-        relation.fromId === entryId ? relation.toId : relation.fromId;
+      const relatedId = relation.fromId === entryId ? relation.toId : relation.fromId;
 
       if (seenIds.has(relatedId)) continue;
 
@@ -290,12 +276,7 @@ ${entries.join('\n')}
    * Uses rough approximation: ~4 characters per token
    */
   private estimateTokens(item: ContextItem): number {
-    const text = [
-      item.title,
-      item.type,
-      item.content,
-      item.tags.join(' '),
-    ].join(' ');
+    const text = [item.title, item.type, item.content, item.tags.join(' ')].join(' ');
 
     return Math.ceil(text.length / 4);
   }

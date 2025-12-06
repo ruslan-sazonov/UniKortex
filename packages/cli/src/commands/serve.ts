@@ -9,7 +9,7 @@ import {
   ContextRetriever,
   type EntryType,
   type EntryStatus,
-  type EntryFilters,
+  type EntryFilters as _EntryFilters,
 } from '@unikortex/core';
 
 interface ServeOptions {
@@ -79,18 +79,20 @@ export const serveCommand = new Command('serve')
           // Health check
           if (path === '/health' || path === '/') {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-              status: 'ok',
-              version: '0.1.0',
-              mode: 'local',
-              endpoints: [
-                'GET /openapi.json - OpenAPI spec for ChatGPT',
-                'GET /search?q=query - Search knowledge base',
-                'POST /context - Get context for LLM',
-                'GET /projects - List projects',
-                'POST /save - Save new entry',
-              ],
-            }));
+            res.end(
+              JSON.stringify({
+                status: 'ok',
+                version: '0.1.0',
+                mode: 'local',
+                endpoints: [
+                  'GET /openapi.json - OpenAPI spec for ChatGPT',
+                  'GET /search?q=query - Search knowledge base',
+                  'POST /context - Get context for LLM',
+                  'GET /projects - List projects',
+                  'POST /save - Save new entry',
+                ],
+              })
+            );
             return;
           }
 
@@ -165,16 +167,15 @@ export const serveCommand = new Command('serve')
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify(result));
             } else {
-              const formatted = contextRetriever.formatForLLM(
-                result,
-                format as 'xml' | 'markdown'
-              );
+              const formatted = contextRetriever.formatForLLM(result, format as 'xml' | 'markdown');
               res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({
-                content: formatted,
-                itemCount: result.items.length,
-                tokensEstimate: result.totalTokensEstimate,
-              }));
+              res.end(
+                JSON.stringify({
+                  content: formatted,
+                  itemCount: result.items.length,
+                  tokensEstimate: result.totalTokensEstimate,
+                })
+              );
             }
             return;
           }
@@ -198,17 +199,16 @@ export const serveCommand = new Command('serve')
               filters: { projectId },
             });
 
-            const formatted = contextRetriever.formatForLLM(
-              result,
-              format as 'xml' | 'markdown'
-            );
+            const formatted = contextRetriever.formatForLLM(result, format as 'xml' | 'markdown');
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-              content: formatted,
-              itemCount: result.items.length,
-              tokensEstimate: result.totalTokensEstimate,
-            }));
+            res.end(
+              JSON.stringify({
+                content: formatted,
+                itemCount: result.items.length,
+                tokensEstimate: result.totalTokensEstimate,
+              })
+            );
             return;
           }
 
@@ -216,13 +216,15 @@ export const serveCommand = new Command('serve')
           if (path === '/projects' && req.method === 'GET') {
             const projects = await ctx.projects.list();
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-              projects: projects.map((p) => ({
-                name: p.name,
-                displayName: p.displayName,
-                description: p.description,
-              })),
-            }));
+            res.end(
+              JSON.stringify({
+                projects: projects.map((p) => ({
+                  name: p.name,
+                  displayName: p.displayName,
+                  description: p.description,
+                })),
+              })
+            );
             return;
           }
 
@@ -233,7 +235,9 @@ export const serveCommand = new Command('serve')
 
             if (!title || !content || !projectName || !type) {
               res.writeHead(400, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: 'Missing required fields: title, content, project, type' }));
+              res.end(
+                JSON.stringify({ error: 'Missing required fields: title, content, project, type' })
+              );
               return;
             }
 
@@ -256,12 +260,14 @@ export const serveCommand = new Command('serve')
             }
 
             res.writeHead(201, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-              success: true,
-              id: entry.id,
-              title: entry.title,
-              project: project.name,
-            }));
+            res.end(
+              JSON.stringify({
+                success: true,
+                id: entry.id,
+                title: entry.title,
+                project: project.name,
+              })
+            );
             return;
           }
 
@@ -278,10 +284,12 @@ export const serveCommand = new Command('serve')
 
             const project = await ctx.projects.get(entry.projectId);
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-              ...entry,
-              project: project?.name,
-            }));
+            res.end(
+              JSON.stringify({
+                ...entry,
+                project: project?.name,
+              })
+            );
             return;
           }
 
@@ -332,7 +340,9 @@ export const serveCommand = new Command('serve')
 /**
  * Parse JSON body from request
  */
-async function parseJsonBody(req: import('node:http').IncomingMessage): Promise<Record<string, unknown>> {
+async function parseJsonBody(
+  req: import('node:http').IncomingMessage
+): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', (chunk) => {
@@ -341,7 +351,7 @@ async function parseJsonBody(req: import('node:http').IncomingMessage): Promise<
     req.on('end', () => {
       try {
         resolve(body ? JSON.parse(body) : {});
-      } catch (error) {
+      } catch {
         reject(new Error('Invalid JSON body'));
       }
     });
@@ -357,7 +367,8 @@ function generateOpenApiSpec(host: string, port: number) {
     openapi: '3.1.0',
     info: {
       title: 'UniKortex Knowledge Base',
-      description: 'Access your personal knowledge base with decisions, research, artifacts, and notes. Use this to recall past decisions, find relevant context, and save new knowledge.',
+      description:
+        'Access your personal knowledge base with decisions, research, artifacts, and notes. Use this to recall past decisions, find relevant context, and save new knowledge.',
       version: '0.1.0',
     },
     servers: [
@@ -371,7 +382,8 @@ function generateOpenApiSpec(host: string, port: number) {
         get: {
           operationId: 'searchKnowledgeBase',
           summary: 'Search the knowledge base',
-          description: 'Search for entries in the knowledge base using natural language. Returns relevant decisions, research, artifacts, and notes.',
+          description:
+            'Search for entries in the knowledge base using natural language. Returns relevant decisions, research, artifacts, and notes.',
           parameters: [
             {
               name: 'q',
@@ -391,7 +403,10 @@ function generateOpenApiSpec(host: string, port: number) {
               name: 'type',
               in: 'query',
               required: false,
-              schema: { type: 'string', enum: ['decision', 'research', 'artifact', 'note', 'reference'] },
+              schema: {
+                type: 'string',
+                enum: ['decision', 'research', 'artifact', 'note', 'reference'],
+              },
               description: 'Filter by entry type',
             },
             {
@@ -438,7 +453,8 @@ function generateOpenApiSpec(host: string, port: number) {
         get: {
           operationId: 'getContext',
           summary: 'Get relevant context from knowledge base',
-          description: 'Retrieve relevant entries formatted for LLM consumption. Use this when you need detailed context about a topic.',
+          description:
+            'Retrieve relevant entries formatted for LLM consumption. Use this when you need detailed context about a topic.',
           parameters: [
             {
               name: 'q',
@@ -517,7 +533,8 @@ function generateOpenApiSpec(host: string, port: number) {
         post: {
           operationId: 'saveToKnowledgeBase',
           summary: 'Save content to knowledge base',
-          description: 'Save a new entry (decision, research, artifact, note, or reference) to the knowledge base.',
+          description:
+            'Save a new entry (decision, research, artifact, note, or reference) to the knowledge base.',
           requestBody: {
             required: true,
             content: {

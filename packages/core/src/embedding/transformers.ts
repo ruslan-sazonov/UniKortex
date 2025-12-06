@@ -33,11 +33,7 @@ export class TransformersJsProvider implements IEmbeddingProvider {
 
       this.initialized = true;
     } catch (error) {
-      throw new EmbeddingError(
-        `Failed to initialize TransformersJS: ${error}`,
-        this.name,
-        error
-      );
+      throw new EmbeddingError(`Failed to initialize TransformersJS: ${error}`, this.name, error);
     }
   }
 
@@ -59,11 +55,7 @@ export class TransformersJsProvider implements IEmbeddingProvider {
 
       return new Float32Array(result.data);
     } catch (error) {
-      throw new EmbeddingError(
-        `Failed to generate embedding: ${error}`,
-        this.name,
-        error
-      );
+      throw new EmbeddingError(`Failed to generate embedding: ${error}`, this.name, error);
     }
   }
 

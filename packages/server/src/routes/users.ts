@@ -21,16 +21,20 @@ const createApiKeySchema = z.object({
  */
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString('hex');
-  const hash = createHash('sha256').update(salt + password).digest('hex');
+  const hash = createHash('sha256')
+    .update(salt + password)
+    .digest('hex');
   return `${salt}:${hash}`;
 }
 
 /**
  * Verify a password against its hash
  */
-function verifyPassword(password: string, storedHash: string): boolean {
+function _verifyPassword(password: string, storedHash: string): boolean {
   const [salt, hash] = storedHash.split(':');
-  const computedHash = createHash('sha256').update(salt + password).digest('hex');
+  const computedHash = createHash('sha256')
+    .update(salt + password)
+    .digest('hex');
   return hash === computedHash;
 }
 
@@ -52,15 +56,9 @@ export function createUserRoutes(storage: PostgresStorage): FastifyPluginAsync {
           return reply.conflict('Email already registered');
         }
 
-        const passwordHash = parsed.data.password
-          ? hashPassword(parsed.data.password)
-          : undefined;
+        const passwordHash = parsed.data.password ? hashPassword(parsed.data.password) : undefined;
 
-        const user = await storage.createUser(
-          parsed.data.email,
-          parsed.data.name,
-          passwordHash
-        );
+        const user = await storage.createUser(parsed.data.email, parsed.data.name, passwordHash);
 
         // Generate initial API key
         const apiKey = generateApiKey();

@@ -2,11 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { withContext } from '../utils/context.js';
 import type { EntryType, EntryStatus } from '@unikortex/core';
-import {
-  ContextRetriever,
-  EmbeddingService,
-  VectorStore,
-} from '@unikortex/core';
+import { ContextRetriever, EmbeddingService, VectorStore } from '@unikortex/core';
 
 interface ContextOptions {
   project?: string;

@@ -80,7 +80,7 @@ export function loadConfig(): Config {
     const parsed = parseYaml(content);
     const validated = ConfigSchema.parse(parsed);
     return validated;
-  } catch (error) {
+  } catch {
     // If config is invalid, return default
     console.warn(`Warning: Invalid config file at ${configPath}, using defaults`);
     return getDefaultConfig();

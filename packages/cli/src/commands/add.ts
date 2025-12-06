@@ -39,7 +39,7 @@ export const addCommand = new Command('add')
         // Use active project as default if not specified
         let projectName = options.project ?? config.activeProject;
         let type = options.type;
-        let status = options.status ?? 'active';
+        const status = options.status ?? 'active';
         let tags: string[] = options.tags ? options.tags.split(',').map((t) => t.trim()) : [];
 
         // Read content from file if specified
@@ -83,7 +83,8 @@ export const addCommand = new Command('add')
               name: 'newProjectName',
               message: 'New project name:',
               when: (ans: { project?: string }) => ans.project === '__new__',
-              validate: (input: string) => /^[a-z0-9-]+$/.test(input) || 'Use lowercase alphanumeric with hyphens',
+              validate: (input: string) =>
+                /^[a-z0-9-]+$/.test(input) || 'Use lowercase alphanumeric with hyphens',
             },
             {
               type: 'list',
@@ -123,13 +124,18 @@ export const addCommand = new Command('add')
           }
 
           if (answers.tags) {
-            tags = answers.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+            tags = answers.tags
+              .split(',')
+              .map((t: string) => t.trim())
+              .filter(Boolean);
           }
         }
 
         // Validate required fields
         if (!title || !projectName || !type || !content) {
-          console.error(chalk.red('Missing required fields: title, project, type, and content are required.'));
+          console.error(
+            chalk.red('Missing required fields: title, project, type, and content are required.')
+          );
           process.exit(1);
         }
 
