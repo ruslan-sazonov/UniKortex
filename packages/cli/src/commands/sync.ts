@@ -72,9 +72,17 @@ export const syncCommand = new Command('sync')
 
         spinner.succeed(chalk.green('Sync completed successfully!'));
         console.log('');
-        console.log(`  Projects synced: ${result.projectsPulled}`);
-        console.log(`  Entries synced:  ${result.entriesPulled}`);
-        console.log(`  Entries indexed: ${result.entriesIndexed}`);
+        console.log(chalk.bold('  Pulled from remote:'));
+        console.log(`    Projects: ${result.projectsPulled}`);
+        console.log(`    Entries:  ${result.entriesPulled}`);
+        console.log('');
+        console.log(chalk.bold('  Pushed to remote:'));
+        console.log(`    Projects: ${result.projectsPushed}`);
+        console.log(`    Entries:  ${result.entriesPushed}`);
+        if (result.entriesIndexed > 0) {
+          console.log('');
+          console.log(`  Entries indexed: ${result.entriesIndexed}`);
+        }
       } catch (error) {
         spinner.fail(chalk.red('Sync failed'));
         console.error(chalk.red((error as Error).message));
