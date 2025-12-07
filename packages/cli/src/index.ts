@@ -24,6 +24,7 @@ import { mcpCommand } from './commands/mcp.js';
 import { mcpConfigCommand } from './commands/mcp-config.js';
 import { serverCommand } from './commands/server.js';
 import { serveCommand } from './commands/serve.js';
+import { syncCommand } from './commands/sync.js';
 
 const program = new Command();
 
@@ -51,5 +52,6 @@ program.addCommand(mcpCommand);
 program.addCommand(mcpConfigCommand);
 program.addCommand(serverCommand);
 program.addCommand(serveCommand);
+program.addCommand(syncCommand);
 
 program.parse();

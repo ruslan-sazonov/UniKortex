@@ -11,6 +11,7 @@ import {
   EmbeddingService,
   VectorStore,
   ContextRetriever,
+  SyncManager,
   loadConfig,
   setConfigValue,
   isInitialized,
@@ -29,6 +30,7 @@ interface AppContext {
   projects: ProjectService;
   relations: RelationService;
   vault: VaultSyncService;
+  syncManager?: SyncManager;
   searchEngine?: HybridSearchEngine;
   contextRetriever?: ContextRetriever;
 }
@@ -96,6 +98,24 @@ async function getContext(): Promise<AppContext> {
     contextRetriever = new ContextRetriever(storage);
   }
 
+  // Initialize sync manager if remote sync is configured
+  let syncManager: SyncManager | undefined;
+  try {
+    syncManager = new SyncManager({
+      storage,
+      embeddingService,
+      vectorStore,
+      config,
+    });
+    if (syncManager.isEnabled()) {
+      await syncManager.initialize();
+      // Perform initial sync to get latest data
+      await syncManager.pullChanges();
+    }
+  } catch (error) {
+    console.warn('Remote sync not available:', (error as Error).message);
+  }
+
   context = {
     config,
     storage,
@@ -103,6 +123,7 @@ async function getContext(): Promise<AppContext> {
     projects: new ProjectService(storage),
     relations: new RelationService(storage),
     vault: new VaultSyncService(storage, config),
+    syncManager,
     searchEngine,
     contextRetriever,
   };
@@ -199,6 +220,15 @@ async function main() {
           }
         }
 
+        // Push to remote if sync is enabled
+        if (ctx.syncManager?.isEnabled()) {
+          try {
+            await ctx.syncManager.pushEntry(entry);
+          } catch {
+            // Ignore sync errors, local save succeeded
+          }
+        }
+
         return {
           content: [
             {
@@ -261,6 +291,15 @@ async function main() {
     },
     async ({ query, project: projectName, allProjects, type, limit }) => {
       try {
+        // Pull latest changes from remote before searching
+        if (ctx.syncManager?.isEnabled()) {
+          try {
+            await ctx.syncManager.pullChanges();
+          } catch {
+            // Ignore sync errors, continue with local data
+          }
+        }
+
         let projectId: string | undefined;
         let scopeDescription: string;
 
@@ -363,6 +402,15 @@ async function main() {
     },
     async ({ id, includeRelated }) => {
       try {
+        // Pull latest changes from remote before fetching
+        if (ctx.syncManager?.isEnabled()) {
+          try {
+            await ctx.syncManager.pullChanges();
+          } catch {
+            // Ignore sync errors, continue with local data
+          }
+        }
+
         const entry = await ctx.entries.get(id);
 
         if (!entry) {
@@ -616,6 +664,15 @@ async function main() {
     },
     async ({ query, project: projectName, allProjects, maxTokens, format }) => {
       try {
+        // Pull latest changes from remote before retrieving context
+        if (ctx.syncManager?.isEnabled()) {
+          try {
+            await ctx.syncManager.pullChanges();
+          } catch {
+            // Ignore sync errors, continue with local data
+          }
+        }
+
         let projectId: string | undefined;
 
         if (allProjects) {

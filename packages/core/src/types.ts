@@ -192,6 +192,17 @@ export const ConfigSchema = z.object({
     })
     .optional(),
 
+  // Remote sync configuration (Turso)
+  sync: z
+    .object({
+      enabled: z.boolean().default(false),
+      url: z.string().url(), // Turso database URL (libsql://<db>-<org>.turso.io)
+      authToken: z.string().optional(), // Turso auth token (optional for local libsql)
+      autoSync: z.boolean().default(true), // Auto-push on write, auto-pull before read
+      syncInterval: z.number().int().positive().default(0), // Interval in ms for background sync (0 = disabled)
+    })
+    .optional(),
+
   output: z
     .object({
       defaultFormat: z.enum(['table', 'json', 'minimal']).default('table'),

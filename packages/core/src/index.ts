@@ -24,3 +24,6 @@ export * from './search/index.js';
 
 // Context retrieval
 export * from './context/index.js';
+
+// Remote sync
+export * from './sync/index.js';
