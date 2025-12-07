@@ -64,47 +64,113 @@ export class SyncManager {
   }
 
   /**
-   * Perform a full sync: pull from remote, merge with local, update vectors
+   * Perform a full bidirectional sync:
+   * 1. Pull remote data and merge with local (newer wins)
+   * 2. Push local data that's newer or doesn't exist remotely
    */
   async fullSync(): Promise<{
     entriesPulled: number;
+    entriesPushed: number;
     projectsPulled: number;
+    projectsPushed: number;
     entriesIndexed: number;
   }> {
     if (!this.isEnabled()) {
-      return { entriesPulled: 0, projectsPulled: 0, entriesIndexed: 0 };
+      return {
+        entriesPulled: 0,
+        entriesPushed: 0,
+        projectsPulled: 0,
+        projectsPushed: 0,
+        entriesIndexed: 0,
+      };
     }
 
     await this.initialize();
 
-    const { projects, entries, relations } = await this.tursoSync.pullAll();
+    // Step 1: Pull remote data
+    const { projects: remoteProjects, entries: remoteEntries, relations: remoteRelations } =
+      await this.tursoSync.pullAll();
 
-    // Upsert projects to local storage
-    for (const project of projects) {
-      const existing = await this.storage.getProject(project.id);
-      if (!existing) {
-        // Insert using raw data (skip validation since it's from trusted source)
-        await this.upsertProject(project);
-      } else if (project.updatedAt > existing.updatedAt) {
-        await this.upsertProject(project);
-      }
-    }
+    // Build maps for quick lookup
+    const remoteProjectMap = new Map(remoteProjects.map((p) => [p.id, p]));
+    const remoteEntryMap = new Map(remoteEntries.map((e) => [e.id, e]));
+    const remoteRelationSet = new Set(remoteRelations.map((r) => `${r.fromId}:${r.toId}`));
 
-    // Upsert entries to local storage
+    // Step 2: Get all local data
+    const localProjects = await this.storage.listProjects();
+    const localEntriesResult = await this.storage.listEntries({ limit: 10000 });
+    const localEntries = localEntriesResult.items;
+
+    let projectsPulled = 0;
+    let projectsPushed = 0;
+    let entriesPulled = 0;
+    let entriesPushed = 0;
     const newOrUpdatedEntries: Entry[] = [];
-    for (const entry of entries) {
-      const existing = await this.storage.getEntry(entry.id);
-      if (!existing) {
-        await this.upsertEntry(entry);
-        newOrUpdatedEntries.push(entry);
-      } else if (entry.updatedAt > existing.updatedAt) {
-        await this.upsertEntry(entry);
-        newOrUpdatedEntries.push(entry);
+
+    // Step 3: Merge projects (bidirectional)
+    // 3a: Process remote projects - pull if newer or doesn't exist locally
+    for (const remoteProject of remoteProjects) {
+      const localProject = localProjects.find((p) => p.id === remoteProject.id);
+      if (!localProject) {
+        // Remote exists, local doesn't - pull
+        await this.upsertProject(remoteProject);
+        projectsPulled++;
+      } else if (remoteProject.updatedAt > localProject.updatedAt) {
+        // Remote is newer - pull
+        await this.upsertProject(remoteProject);
+        projectsPulled++;
+      }
+      // If local is newer, we'll push in the next loop
+    }
+
+    // 3b: Process local projects - push if newer or doesn't exist remotely
+    for (const localProject of localProjects) {
+      const remoteProject = remoteProjectMap.get(localProject.id);
+      if (!remoteProject) {
+        // Local exists, remote doesn't - push
+        await this.tursoSync.pushProject(localProject);
+        projectsPushed++;
+      } else if (localProject.updatedAt > remoteProject.updatedAt) {
+        // Local is newer - push
+        await this.tursoSync.pushProject(localProject);
+        projectsPushed++;
       }
     }
 
-    // Upsert relations
-    for (const relation of relations) {
+    // Step 4: Merge entries (bidirectional)
+    // 4a: Process remote entries - pull if newer or doesn't exist locally
+    for (const remoteEntry of remoteEntries) {
+      const localEntry = localEntries.find((e) => e.id === remoteEntry.id);
+      if (!localEntry) {
+        // Remote exists, local doesn't - pull
+        await this.upsertEntry(remoteEntry);
+        newOrUpdatedEntries.push(remoteEntry);
+        entriesPulled++;
+      } else if (remoteEntry.updatedAt > localEntry.updatedAt) {
+        // Remote is newer - pull
+        await this.upsertEntry(remoteEntry);
+        newOrUpdatedEntries.push(remoteEntry);
+        entriesPulled++;
+      }
+    }
+
+    // 4b: Process local entries - push if newer or doesn't exist remotely
+    for (const localEntry of localEntries) {
+      const remoteEntry = remoteEntryMap.get(localEntry.id);
+      if (!remoteEntry) {
+        // Local exists, remote doesn't - push
+        await this.tursoSync.pushEntry(localEntry);
+        entriesPushed++;
+      } else if (localEntry.updatedAt > remoteEntry.updatedAt) {
+        // Local is newer - push
+        await this.tursoSync.pushEntry(localEntry);
+        entriesPushed++;
+      }
+    }
+
+    // Step 5: Sync relations (bidirectional)
+    // 5a: Pull remote relations that don't exist locally
+    for (const relation of remoteRelations) {
       const existing = await this.storage.getRelation(relation.fromId, relation.toId);
       if (!existing) {
         try {
@@ -115,7 +181,18 @@ export class SyncManager {
       }
     }
 
-    // Re-index new/updated entries
+    // 5b: Push local relations that don't exist remotely
+    for (const localEntry of localEntries) {
+      const relations = await this.storage.getEntryRelations(localEntry.id);
+      for (const relation of relations) {
+        const key = `${relation.fromId}:${relation.toId}`;
+        if (!remoteRelationSet.has(key)) {
+          await this.tursoSync.pushRelation(relation);
+        }
+      }
+    }
+
+    // Step 6: Re-index new/updated entries for vector search
     let entriesIndexed = 0;
     if (this.embeddingService && this.vectorStore && newOrUpdatedEntries.length > 0) {
       for (const entry of newOrUpdatedEntries) {
@@ -131,8 +208,10 @@ export class SyncManager {
     }
 
     return {
-      entriesPulled: entries.length,
-      projectsPulled: projects.length,
+      entriesPulled,
+      entriesPushed,
+      projectsPulled,
+      projectsPushed,
       entriesIndexed,
     };
   }

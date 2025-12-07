@@ -81,7 +81,9 @@ describe('SyncManager', () => {
       const result = await syncManager.fullSync();
       expect(result).toEqual({
         entriesPulled: 0,
+        entriesPushed: 0,
         projectsPulled: 0,
+        projectsPushed: 0,
         entriesIndexed: 0,
       });
     });
