@@ -1,6 +1,6 @@
 {
   "name": "@unikortex/mcp-stdio",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "MCP server for UniKortex - Model Context Protocol integration",
   "license": "PolyForm-Noncommercial-1.0.0",
   "repository": {

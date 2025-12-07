@@ -30,3 +30,5 @@ coverage/
 
 # UniKortex local data (for development)
 .unikortex-dev/
+
+docs/

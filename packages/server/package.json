@@ -1,6 +1,6 @@
 {
   "name": "@unikortex/server",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "UniKortex Team Server - REST API and MCP HTTP transport",
   "type": "module",
   "main": "dist/index.js",
