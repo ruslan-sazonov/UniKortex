@@ -15,6 +15,8 @@ Bug fix release that resolves Turso sync configuration validation errors during 
 
 - **Code formatting**: Fixed Prettier formatting issues in `sync.ts` and `turso.ts`
 
+- **libsql bundling**: Fixed "Dynamic require of path is not supported" error by excluding `@libsql/client` from bundling
+
 ## Improvements
 
 - **Test coverage**: Added 50 new tests across core services:
