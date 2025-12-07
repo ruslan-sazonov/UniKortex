@@ -106,19 +106,16 @@ syncCommand
         process.exit(1);
       }
 
-      // Configure sync settings
-      setConfigValue('sync.enabled', true);
-      setConfigValue('sync.url', url);
-
+      // Configure sync settings as a complete object to avoid partial validation
+      const syncConfig: { enabled: boolean; url: string; authToken?: string; autoSync: boolean } = {
+        enabled: true,
+        url,
+        autoSync: options?.autoSync !== false,
+      };
       if (authToken) {
-        setConfigValue('sync.authToken', authToken);
+        syncConfig.authToken = authToken;
       }
-
-      if (options?.autoSync === false) {
-        setConfigValue('sync.autoSync', false);
-      } else {
-        setConfigValue('sync.autoSync', true);
-      }
+      setConfigValue('sync', syncConfig);
 
       console.log(chalk.green('✓ Sync configured successfully!'));
       console.log('');
