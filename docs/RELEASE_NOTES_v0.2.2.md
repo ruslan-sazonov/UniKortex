@@ -1,4 +1,4 @@
-# Release Notes v0.2.1
+# Release Notes v0.2.2
 
 **Release Date:** December 7, 2025
 
@@ -28,7 +28,7 @@ Bug fix release that resolves Turso sync configuration validation errors during 
 ## Upgrade
 
 ```bash
-npx @unikortex/cli@0.2.1 init --force
+npx @unikortex/cli@0.2.2 init --force
 ```
 
 Or if already installed:
