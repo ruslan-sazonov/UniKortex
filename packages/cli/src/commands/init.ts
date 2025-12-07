@@ -116,13 +116,16 @@ async function configureSyncInteractive(): Promise<boolean> {
     },
   ]);
 
-  // Save sync configuration
-  setConfigValue('sync.enabled', true);
-  setConfigValue('sync.url', answers.url);
+  // Save sync configuration as a complete object to avoid partial validation
+  const syncConfig: { enabled: boolean; url: string; authToken?: string; autoSync: boolean } = {
+    enabled: true,
+    url: answers.url,
+    autoSync: true,
+  };
   if (answers.authToken) {
-    setConfigValue('sync.authToken', answers.authToken);
+    syncConfig.authToken = answers.authToken;
   }
-  setConfigValue('sync.autoSync', true);
+  setConfigValue('sync', syncConfig);
 
   // Test the connection
   const spinner = ora('Testing connection to Turso...').start();
