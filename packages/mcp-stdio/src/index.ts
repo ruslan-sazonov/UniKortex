@@ -242,7 +242,7 @@ async function main() {
   // Search the knowledge base
   server.tool(
     'unikortex_search',
-    'Search the knowledge base for relevant entries. Use this when the user asks about past decisions, wants to find previous research, or needs context from earlier work. By default, searches within the active project if one is set.',
+    'IMPORTANT: Search the UniKortex knowledge base for project documentation, PRDs, architecture decisions, research, and saved knowledge. Use this FIRST before searching the filesystem when looking for requirements, specifications, or previously saved information. The knowledge base contains entries that are NOT stored as files.',
     {
       query: z.string().describe('Natural language search query'),
       project: z
@@ -592,7 +592,7 @@ async function main() {
   // Get formatted context for LLM consumption
   server.tool(
     'unikortex_context',
-    'Get relevant context from the knowledge base formatted for LLM consumption. Use this to retrieve multiple relevant entries at once. By default, retrieves context from the active project if one is set.',
+    'IMPORTANT: Retrieve relevant context from the UniKortex knowledge base. Use this when you need comprehensive background on a topic, project requirements, or architecture context. This returns formatted knowledge base entries - NOT filesystem content.',
     {
       query: z.string().describe('Query to find relevant context'),
       project: z
@@ -791,6 +791,51 @@ async function main() {
           isError: true,
         };
       }
+    }
+  );
+
+  // Resource: Knowledge Base Instructions
+  // This resource provides instructions that should be included in the system context
+  server.resource(
+    'unikortex://instructions',
+    'UniKortex Knowledge Base - IMPORTANT: Use unikortex_search and unikortex_context tools FIRST when looking for project documentation, PRDs, architecture decisions, requirements, or any previously saved knowledge. Do NOT search the filesystem for these - they are stored in the UniKortex knowledge base.',
+    async () => {
+      const activeProject = getActiveProjectName();
+      const projects = await ctx.projects.list();
+
+      return {
+        contents: [
+          {
+            uri: 'unikortex://instructions',
+            mimeType: 'text/plain',
+            text: `# UniKortex Knowledge Base Integration
+
+IMPORTANT: When the user asks about:
+- Project requirements, PRDs, or specifications
+- Architecture decisions or design documents
+- Previous research or findings
+- Any "saved" or "stored" knowledge
+
+ALWAYS use UniKortex tools FIRST before searching the filesystem:
+1. unikortex_search - Search for relevant entries
+2. unikortex_context - Get formatted context for a query
+3. unikortex_get - Retrieve a specific entry by ID
+
+The filesystem may be empty or contain different content. The knowledge base is the source of truth for saved project knowledge.
+
+Current state:
+- Active project: ${activeProject ?? 'None (use unikortex_set_project to set one)'}
+- Available projects: ${projects.map((p) => p.name).join(', ') || 'None yet'}
+
+To find project documentation or PRDs, use:
+  unikortex_search(query: "PRD requirements", allProjects: true)
+
+Or for a specific project:
+  unikortex_set_project(project: "project-name")
+  unikortex_search(query: "architecture requirements")`,
+          },
+        ],
+      };
     }
   );
 
