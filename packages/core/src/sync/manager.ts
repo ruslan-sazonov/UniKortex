@@ -88,8 +88,11 @@ export class SyncManager {
     await this.initialize();
 
     // Step 1: Pull remote data
-    const { projects: remoteProjects, entries: remoteEntries, relations: remoteRelations } =
-      await this.tursoSync.pullAll();
+    const {
+      projects: remoteProjects,
+      entries: remoteEntries,
+      relations: remoteRelations,
+    } = await this.tursoSync.pullAll();
 
     // Build maps for quick lookup
     const remoteProjectMap = new Map(remoteProjects.map((p) => [p.id, p]));
