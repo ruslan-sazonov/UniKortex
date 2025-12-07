@@ -229,13 +229,13 @@ export class TursoSyncService {
     }
 
     // Convert rows to objects
-    const projects = projectsResult.rows.map(row => this.rowToProject(row));
-    const entries = entriesResult.rows.map(row => {
+    const projects = projectsResult.rows.map((row) => this.rowToProject(row));
+    const entries = entriesResult.rows.map((row) => {
       const entry = this.rowToEntry(row);
       entry.tags = tags.get(entry.id) ?? [];
       return entry;
     });
-    const relations = relationsResult.rows.map(row => this.rowToRelation(row));
+    const relations = relationsResult.rows.map((row) => this.rowToRelation(row));
 
     // Update sync state
     this.updateSyncState();
@@ -298,7 +298,7 @@ export class TursoSyncService {
         args: [entry.id],
       },
       // Insert new tags
-      ...entry.tags.map(tag => ({
+      ...entry.tags.map((tag) => ({
         sql: 'INSERT INTO entry_tags (entry_id, tag) VALUES (?, ?)',
         args: [entry.id, tag],
       })),

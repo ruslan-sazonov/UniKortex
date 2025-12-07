@@ -30,7 +30,9 @@ export const syncCommand = new Command('sync')
         console.log(chalk.cyan('  unikortex sync setup <turso-url> [auth-token]'));
         console.log('');
         console.log('Example:');
-        console.log(chalk.dim('  unikortex sync setup libsql://my-db-myorg.turso.io my-auth-token'));
+        console.log(
+          chalk.dim('  unikortex sync setup libsql://my-db-myorg.turso.io my-auth-token')
+        );
         return;
       }
 
@@ -95,7 +97,11 @@ syncCommand
   .action(async (url: string, authToken?: string, options?: { autoSync?: boolean }) => {
     try {
       // Validate URL format
-      if (!url.startsWith('libsql://') && !url.startsWith('https://') && !url.startsWith('http://')) {
+      if (
+        !url.startsWith('libsql://') &&
+        !url.startsWith('https://') &&
+        !url.startsWith('http://')
+      ) {
         console.error(chalk.red('Invalid URL. Must start with libsql://, https://, or http://'));
         process.exit(1);
       }
@@ -118,7 +124,9 @@ syncCommand
       console.log('');
       console.log(`  URL: ${chalk.cyan(url)}`);
       console.log(`  Auth: ${authToken ? chalk.dim('***') : chalk.dim('(none)')}`);
-      console.log(`  Auto-sync: ${options?.autoSync !== false ? chalk.green('enabled') : chalk.yellow('disabled')}`);
+      console.log(
+        `  Auto-sync: ${options?.autoSync !== false ? chalk.green('enabled') : chalk.yellow('disabled')}`
+      );
       console.log('');
       console.log('Run ' + chalk.cyan('unikortex sync') + ' to sync now.');
     } catch (error) {
@@ -152,8 +160,12 @@ syncCommand
 
       console.log(`  Enabled:   ${chalk.green('Yes')}`);
       console.log(`  URL:       ${chalk.cyan(config.sync.url)}`);
-      console.log(`  Auth:      ${config.sync.authToken ? chalk.dim('configured') : chalk.dim('(none)')}`);
-      console.log(`  Auto-sync: ${config.sync.autoSync !== false ? chalk.green('Yes') : chalk.yellow('No')}`);
+      console.log(
+        `  Auth:      ${config.sync.authToken ? chalk.dim('configured') : chalk.dim('(none)')}`
+      );
+      console.log(
+        `  Auto-sync: ${config.sync.autoSync !== false ? chalk.green('Yes') : chalk.yellow('No')}`
+      );
 
       // Try to get last sync info
       const storage = new SQLiteStorage();
@@ -166,7 +178,9 @@ syncCommand
 
       try {
         const status = syncManager.getSyncStatus();
-        console.log(`  Last sync: ${status.lastSyncAt ? status.lastSyncAt.toISOString() : chalk.dim('Never')}`);
+        console.log(
+          `  Last sync: ${status.lastSyncAt ? status.lastSyncAt.toISOString() : chalk.dim('Never')}`
+        );
         console.log(`  Device ID: ${chalk.dim(status.deviceId)}`);
       } catch {
         console.log(`  Last sync: ${chalk.dim('Unknown')}`);
@@ -203,7 +217,9 @@ syncCommand
       const config = loadConfig();
 
       if (!config.sync?.url) {
-        console.error(chalk.red('Sync URL not configured. Run "unikortex sync setup <url>" first.'));
+        console.error(
+          chalk.red('Sync URL not configured. Run "unikortex sync setup <url>" first.')
+        );
         process.exit(1);
       }
 
