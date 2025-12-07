@@ -23,6 +23,7 @@ UniKortex solves this by providing a persistent knowledge base that AI assistant
 ## Features
 
 - **Persistent Knowledge Storage** - SQLite-based storage with full-text search
+- **Multi-Device Sync** - Sync your knowledge base across devices using Turso (free cloud SQLite)
 - **Semantic Search** - Vector embeddings for intelligent context retrieval
 - **Project Scoping** - Organize knowledge by project with automatic context filtering
 - **MCP Integration** - Native support for Claude Desktop, Claude Code, Gemini CLI, and Antigravity
@@ -64,6 +65,18 @@ unikortex init
 ```
 
 This creates `~/.unikortex/` with your configuration and SQLite database.
+
+During initialization, you'll be asked to choose a storage mode:
+
+- **Local only** - Data stored on this device only (default)
+- **Multi-device sync** - Sync across devices using Turso cloud database
+
+You can also specify the mode directly:
+
+```bash
+unikortex init --local   # Local-only mode
+unikortex init --sync    # Multi-device sync mode
+```
 
 ### 2. Create a Project
 
@@ -211,6 +224,16 @@ unikortex export --format markdown --output ./backup
 unikortex import ./backup
 ```
 
+### Sync (Multi-Device)
+
+```bash
+unikortex sync                 # Sync with remote database
+unikortex sync setup <url>     # Configure Turso database
+unikortex sync status          # Show sync status
+unikortex sync enable          # Enable sync
+unikortex sync disable         # Disable sync
+```
+
 ### Servers
 
 ```bash
@@ -240,6 +263,13 @@ vault:
   enabled: false
   path: ~/Documents/Obsidian/UniKortex
 
+# Multi-device sync (Turso)
+sync:
+  enabled: false
+  url: libsql://your-db.turso.io
+  authToken: your-token
+  autoSync: true  # Auto-sync on read/write
+
 # Active project for filtering
 activeProject: my-project
 ```
@@ -262,6 +292,72 @@ activeProject: my-project
 | `active` | Current and relevant |
 | `superseded` | Replaced by newer entry |
 | `archived` | No longer relevant |
+
+## Multi-Device Sync
+
+UniKortex supports syncing your knowledge base across multiple devices using [Turso](https://turso.tech), a free cloud SQLite database service.
+
+### How It Works
+
+- **Local-first**: All data is stored locally in SQLite for fast access
+- **Hybrid architecture**: Data syncs to Turso, while vector embeddings stay local (rebuilt on each device)
+- **Auto-sync**: When enabled, changes push automatically on write and pull before read
+- **Conflict resolution**: Latest update wins based on timestamps
+
+### Setting Up Turso (Free)
+
+1. **Sign up at Turso**: Go to [turso.tech](https://turso.tech) and create a free account
+
+2. **Create a database**:
+   - Go to Dashboard → Create Database
+   - Name it "unikortex" (or any name you prefer)
+
+3. **Get your database URL**:
+   - Click your database
+   - Copy the URL (e.g., `libsql://unikortex-yourname.turso.io`)
+
+4. **Create an auth token**:
+   - Go to Database → Generate Token
+   - Copy the token
+
+5. **Configure UniKortex**:
+
+```bash
+unikortex sync setup libsql://unikortex-yourname.turso.io your-auth-token
+```
+
+Or during initialization:
+
+```bash
+unikortex init --sync
+```
+
+### Sync Commands
+
+```bash
+# Manual sync
+unikortex sync
+
+# Check sync status
+unikortex sync status
+
+# Disable sync (keep local data)
+unikortex sync disable
+
+# Re-enable sync
+unikortex sync enable
+```
+
+### Free Tier Limits
+
+Turso's free tier includes:
+
+- 9GB total storage
+- 1 billion row reads per month
+- 25 million row writes per month
+- Unlimited databases
+
+This is more than enough for most personal knowledge bases.
 
 ## MCP Tools Available
 
