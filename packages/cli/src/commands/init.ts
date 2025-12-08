@@ -127,7 +127,7 @@ async function configureSyncInteractive(): Promise<boolean> {
   }
   setConfigValue('sync', syncConfig);
 
-  // Test the connection
+  // Test the connection and perform initial sync
   const spinner = ora('Testing connection to Turso...').start();
 
   try {
@@ -136,10 +136,29 @@ async function configureSyncInteractive(): Promise<boolean> {
 
     const syncManager = new SyncManager({ storage });
     await syncManager.initialize();
+
+    spinner.text = 'Syncing with remote database...';
+    const result = await syncManager.fullSync();
+
     await syncManager.close();
     await storage.close();
 
-    spinner.succeed(chalk.green('Connected to Turso successfully!'));
+    spinner.succeed(chalk.green('Connected to Turso and synced successfully!'));
+
+    // Show sync results if anything was synced
+    if (result.projectsPulled > 0 || result.entriesPulled > 0) {
+      console.log('');
+      console.log(chalk.bold('  Pulled from remote:'));
+      console.log(`    Projects: ${result.projectsPulled}`);
+      console.log(`    Entries:  ${result.entriesPulled}`);
+    }
+    if (result.projectsPushed > 0 || result.entriesPushed > 0) {
+      console.log('');
+      console.log(chalk.bold('  Pushed to remote:'));
+      console.log(`    Projects: ${result.projectsPushed}`);
+      console.log(`    Entries:  ${result.entriesPushed}`);
+    }
+
     return true;
   } catch (error) {
     spinner.fail(chalk.red('Failed to connect to Turso'));
