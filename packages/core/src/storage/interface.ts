@@ -9,6 +9,8 @@ import type {
   CreateRelationInput,
   EntryFilters,
   PaginatedResult,
+  UpsertProjectInput,
+  UpsertEntryInput,
 } from '../types.js';
 
 /**
@@ -27,6 +29,7 @@ export interface Storage {
   updateProject(id: string, input: UpdateProjectInput): Promise<Project | null>;
   deleteProject(id: string): Promise<boolean>;
   listProjects(): Promise<Project[]>;
+  upsertProject(input: UpsertProjectInput): Promise<Project>;
 
   // === Entries ===
   createEntry(input: CreateEntryInput): Promise<Entry>;
@@ -34,6 +37,7 @@ export interface Storage {
   updateEntry(id: string, input: UpdateEntryInput): Promise<Entry | null>;
   deleteEntry(id: string): Promise<boolean>;
   listEntries(filters?: EntryFilters): Promise<PaginatedResult<Entry>>;
+  upsertEntry(input: UpsertEntryInput): Promise<Entry>;
 
   // === Tags ===
   getEntryTags(entryId: string): Promise<string[]>;

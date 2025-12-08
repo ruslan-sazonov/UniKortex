@@ -130,6 +130,44 @@ export const CreateRelationInput = z.object({
 
 export type CreateRelationInput = z.infer<typeof CreateRelationInput>;
 
+// === Upsert Schemas (for sync - preserve IDs from remote) ===
+
+export const UpsertProjectInput = z.object({
+  id: z.string(),
+  name: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-z0-9-]+$/, {
+      message: 'Project name must be lowercase alphanumeric with hyphens',
+    }),
+  displayName: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export type UpsertProjectInput = z.infer<typeof UpsertProjectInput>;
+
+export const UpsertEntryInput = z.object({
+  id: z.string().regex(/^unikortex_[a-zA-Z0-9]{12}$/, {
+    message: 'Entry ID must be in format unikortex_xxxxxxxxxxxx',
+  }),
+  projectId: z.string(),
+  title: z.string().min(1).max(500),
+  type: EntryType,
+  status: EntryStatus.default('active'),
+  content: z.string().min(1),
+  contextSummary: z.string().max(500).optional(),
+  tags: z.array(z.string().min(1).max(50)).default([]),
+  supersedes: z.string().nullable().optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  version: z.number().int().positive().default(1),
+});
+
+export type UpsertEntryInput = z.infer<typeof UpsertEntryInput>;
+
 // === Query/Filter Types ===
 
 export const EntryFiltersSchema = z.object({

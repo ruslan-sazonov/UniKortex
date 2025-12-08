@@ -73,12 +73,19 @@ export const listCommand = new Command('list')
 
         const result = await ctx.entries.list(filters);
 
+        // Build project map for display (only when listing from all projects)
+        let projectMap: Map<string, string> | undefined;
+        if (!projectId) {
+          const projects = await ctx.projects.list();
+          projectMap = new Map(projects.map((p) => [p.id, p.name]));
+        }
+
         if (options.format === 'json') {
           console.log(formatEntriesJson(result.items));
         } else if (options.format === 'ids') {
           console.log(formatEntryIds(result.items));
         } else {
-          console.log(formatEntriesTable(result.items));
+          console.log(formatEntriesTable(result.items, projectMap));
           console.log('');
           console.log(chalk.dim(`Scope: ${scopeDescription}`));
           if (result.total > result.items.length) {

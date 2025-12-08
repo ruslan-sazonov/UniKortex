@@ -4,32 +4,60 @@ import type { Entry, Project, EntryRelation } from '@unikortex/core';
 
 /**
  * Format entries as a table
+ * @param entries - The entries to format
+ * @param projectMap - Optional map of project IDs to project names for display
  */
-export function formatEntriesTable(entries: Entry[]): string {
+export function formatEntriesTable(entries: Entry[], projectMap?: Map<string, string>): string {
   if (entries.length === 0) {
     return chalk.dim('No entries found.');
   }
 
+  // If we have project info, include Project column
+  const showProject = projectMap && projectMap.size > 0;
+
+  const head = showProject
+    ? [
+        chalk.bold('ID'),
+        chalk.bold('Title'),
+        chalk.bold('Project'),
+        chalk.bold('Type'),
+        chalk.bold('Status'),
+        chalk.bold('Updated'),
+      ]
+    : [
+        chalk.bold('ID'),
+        chalk.bold('Title'),
+        chalk.bold('Type'),
+        chalk.bold('Status'),
+        chalk.bold('Updated'),
+      ];
+
+  const colWidths = showProject ? [22, 32, 16, 12, 12, 14] : [22, 40, 12, 12, 20];
+
   const table = new Table({
-    head: [
-      chalk.bold('ID'),
-      chalk.bold('Title'),
-      chalk.bold('Type'),
-      chalk.bold('Status'),
-      chalk.bold('Updated'),
-    ],
-    colWidths: [22, 40, 12, 12, 20],
+    head,
+    colWidths,
     wordWrap: true,
   });
 
   for (const entry of entries) {
-    table.push([
-      chalk.cyan(entry.id.slice(0, 20)),
-      truncate(entry.title, 38),
-      formatType(entry.type),
-      formatStatus(entry.status),
-      formatDate(entry.updatedAt),
-    ]);
+    const row = showProject
+      ? [
+          chalk.cyan(entry.id.slice(0, 20)),
+          truncate(entry.title, 30),
+          chalk.dim(truncate(projectMap.get(entry.projectId) ?? entry.projectId.slice(0, 14), 14)),
+          formatType(entry.type),
+          formatStatus(entry.status),
+          formatDate(entry.updatedAt),
+        ]
+      : [
+          chalk.cyan(entry.id.slice(0, 20)),
+          truncate(entry.title, 38),
+          formatType(entry.type),
+          formatStatus(entry.status),
+          formatDate(entry.updatedAt),
+        ];
+    table.push(row);
   }
 
   return table.toString();
