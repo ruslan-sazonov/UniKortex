@@ -12,6 +12,8 @@ import type {
   CreateRelationInput,
   EntryFilters,
   PaginatedResult,
+  UpsertProjectInput,
+  UpsertEntryInput,
 } from '../types.js';
 import { generateEntryId, generateProjectId } from '../utils/id.js';
 import { getDatabasePath } from '../utils/config.js';
@@ -238,6 +240,42 @@ export class SQLiteStorage implements Storage {
     return rows.map((row) => this.rowToProject(row));
   }
 
+  async upsertProject(input: UpsertProjectInput): Promise<Project> {
+    const db = this.getDb();
+
+    try {
+      const stmt = db.prepare(`
+        INSERT INTO projects (id, name, display_name, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          name = excluded.name,
+          display_name = excluded.display_name,
+          description = excluded.description,
+          updated_at = excluded.updated_at
+      `);
+
+      stmt.run(
+        input.id,
+        input.name,
+        input.displayName,
+        input.description ?? null,
+        input.createdAt.toISOString(),
+        input.updatedAt.toISOString()
+      );
+
+      return {
+        id: input.id,
+        name: input.name,
+        displayName: input.displayName,
+        description: input.description,
+        createdAt: input.createdAt,
+        updatedAt: input.updatedAt,
+      };
+    } catch (error) {
+      throw new StorageError('Failed to upsert project', StorageErrorCodes.UNKNOWN, error);
+    }
+  }
+
   // === Entries ===
 
   async createEntry(input: CreateEntryInput): Promise<Entry> {
@@ -418,6 +456,81 @@ export class SQLiteStorage implements Storage {
       limit,
       offset,
     };
+  }
+
+  async upsertEntry(input: UpsertEntryInput): Promise<Entry> {
+    const db = this.getDb();
+
+    const transaction = db.transaction(() => {
+      const stmt = db.prepare(`
+        INSERT INTO entries (
+          id, project_id, title, type, status, content,
+          context_summary, supersedes, created_at, updated_at, version
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          project_id = excluded.project_id,
+          title = excluded.title,
+          type = excluded.type,
+          status = excluded.status,
+          content = excluded.content,
+          context_summary = excluded.context_summary,
+          supersedes = excluded.supersedes,
+          updated_at = excluded.updated_at,
+          version = excluded.version
+      `);
+
+      stmt.run(
+        input.id,
+        input.projectId,
+        input.title,
+        input.type,
+        input.status ?? 'active',
+        input.content,
+        input.contextSummary ?? null,
+        input.supersedes ?? null,
+        input.createdAt.toISOString(),
+        input.updatedAt.toISOString(),
+        input.version ?? 1
+      );
+
+      // Upsert tags - delete existing and insert new
+      db.prepare('DELETE FROM entry_tags WHERE entry_id = ?').run(input.id);
+      if (input.tags && input.tags.length > 0) {
+        const tagStmt = db.prepare('INSERT INTO entry_tags (entry_id, tag) VALUES (?, ?)');
+        for (const tag of input.tags) {
+          tagStmt.run(input.id, tag);
+        }
+      }
+    });
+
+    try {
+      transaction();
+
+      return {
+        id: input.id,
+        projectId: input.projectId,
+        title: input.title,
+        type: input.type,
+        status: input.status ?? 'active',
+        content: input.content,
+        contextSummary: input.contextSummary,
+        tags: input.tags ?? [],
+        supersedes: input.supersedes ?? null,
+        createdAt: input.createdAt,
+        updatedAt: input.updatedAt,
+        version: input.version ?? 1,
+      };
+    } catch (error) {
+      if ((error as { code?: string }).code === 'SQLITE_CONSTRAINT_FOREIGNKEY') {
+        throw new StorageError(
+          `Project "${input.projectId}" not found`,
+          StorageErrorCodes.NOT_FOUND,
+          error
+        );
+      }
+      throw new StorageError('Failed to upsert entry', StorageErrorCodes.UNKNOWN, error);
+    }
   }
 
   // === Tags ===

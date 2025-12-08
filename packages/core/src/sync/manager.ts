@@ -302,51 +302,36 @@ export class SyncManager {
   // === Private Helpers ===
 
   /**
-   * Upsert a project directly to storage (bypassing service layer)
+   * Upsert a project directly to storage, preserving the original ID from remote
    */
   private async upsertProject(project: Project): Promise<void> {
-    const existing = await this.storage.getProject(project.id);
-    if (existing) {
-      await this.storage.updateProject(project.id, {
-        displayName: project.displayName,
-        description: project.description,
-      });
-    } else {
-      // Create using raw data - need to handle this at storage level
-      await this.storage.createProject({
-        name: project.name,
-        displayName: project.displayName,
-        description: project.description,
-      });
-    }
+    await this.storage.upsertProject({
+      id: project.id,
+      name: project.name,
+      displayName: project.displayName,
+      description: project.description,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+    });
   }
 
   /**
-   * Upsert an entry directly to storage (bypassing service layer)
+   * Upsert an entry directly to storage, preserving the original ID from remote
    */
   private async upsertEntry(entry: Entry): Promise<void> {
-    const existing = await this.storage.getEntry(entry.id);
-    if (existing) {
-      await this.storage.updateEntry(entry.id, {
-        title: entry.title,
-        type: entry.type,
-        status: entry.status,
-        content: entry.content,
-        contextSummary: entry.contextSummary,
-        tags: entry.tags,
-        supersedes: entry.supersedes,
-      });
-    } else {
-      await this.storage.createEntry({
-        projectId: entry.projectId,
-        title: entry.title,
-        type: entry.type,
-        status: entry.status,
-        content: entry.content,
-        contextSummary: entry.contextSummary,
-        tags: entry.tags,
-        supersedes: entry.supersedes,
-      });
-    }
+    await this.storage.upsertEntry({
+      id: entry.id,
+      projectId: entry.projectId,
+      title: entry.title,
+      type: entry.type,
+      status: entry.status,
+      content: entry.content,
+      contextSummary: entry.contextSummary,
+      tags: entry.tags,
+      supersedes: entry.supersedes,
+      createdAt: entry.createdAt,
+      updatedAt: entry.updatedAt,
+      version: entry.version,
+    });
   }
 }
