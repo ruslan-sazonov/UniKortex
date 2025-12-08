@@ -7,10 +7,7 @@ import type { Entry, Project, EntryRelation } from '@unikortex/core';
  * @param entries - The entries to format
  * @param projectMap - Optional map of project IDs to project names for display
  */
-export function formatEntriesTable(
-  entries: Entry[],
-  projectMap?: Map<string, string>
-): string {
+export function formatEntriesTable(entries: Entry[], projectMap?: Map<string, string>): string {
   if (entries.length === 0) {
     return chalk.dim('No entries found.');
   }
