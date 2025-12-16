@@ -8,11 +8,12 @@ import {
   EmbeddingService,
   VectorStore,
   SyncManager,
+  ManagedSyncService,
   isInitialized,
 } from '@unikortex/core';
 
 export const syncCommand = new Command('sync')
-  .description('Sync knowledge base with remote Turso database')
+  .description('Sync knowledge base with UniKortex Cloud')
   .action(async () => {
     // Default action: show sync status and perform sync if enabled
     try {
@@ -23,17 +24,20 @@ export const syncCommand = new Command('sync')
 
       const config = loadConfig();
 
-      if (!config.sync?.enabled || !config.sync?.url) {
-        console.log(chalk.yellow('Remote sync is not configured.'));
+      if (!config.sync?.enabled || !config.sync?.proToken) {
+        console.log(chalk.yellow('Cloud sync is not configured.'));
         console.log('');
         console.log('To enable sync, run:');
-        console.log(chalk.cyan('  unikortex sync setup <turso-url> [auth-token]'));
+        console.log(chalk.cyan('  unikortex sync login <pro-token>'));
         console.log('');
-        console.log('Example:');
-        console.log(
-          chalk.dim('  unikortex sync setup libsql://my-db-myorg.turso.io my-auth-token')
-        );
+        console.log('Get your Pro token at ' + chalk.cyan('https://unikortex.io'));
         return;
+      }
+
+      if (!process.env.UNIKORTEX_SYNC_SERVICE_URL) {
+        console.error(chalk.red('Sync service URL not configured.'));
+        console.error(chalk.dim('Set UNIKORTEX_SYNC_SERVICE_URL environment variable.'));
+        process.exit(1);
       }
 
       // Initialize storage and sync manager
@@ -64,7 +68,7 @@ export const syncCommand = new Command('sync')
         config,
       });
 
-      const spinner = ora('Syncing with remote database...').start();
+      const spinner = ora('Syncing with UniKortex Cloud...').start();
 
       try {
         await syncManager.initialize();
@@ -72,11 +76,11 @@ export const syncCommand = new Command('sync')
 
         spinner.succeed(chalk.green('Sync completed successfully!'));
         console.log('');
-        console.log(chalk.bold('  Pulled from remote:'));
+        console.log(chalk.bold('  Pulled from cloud:'));
         console.log(`    Projects: ${result.projectsPulled}`);
         console.log(`    Entries:  ${result.entriesPulled}`);
         console.log('');
-        console.log(chalk.bold('  Pushed to remote:'));
+        console.log(chalk.bold('  Pushed to cloud:'));
         console.log(`    Projects: ${result.projectsPushed}`);
         console.log(`    Entries:  ${result.entriesPushed}`);
         if (result.entriesIndexed > 0) {
@@ -97,43 +101,83 @@ export const syncCommand = new Command('sync')
     }
   });
 
-// Subcommand: setup
+// Subcommand: login
 syncCommand
-  .command('setup <url> [authToken]')
-  .description('Configure remote Turso database for sync')
-  .option('--no-auto-sync', 'Disable automatic sync on read/write')
-  .action(async (url: string, authToken?: string, options?: { autoSync?: boolean }) => {
+  .command('login <token>')
+  .description('Login with your UniKortex Pro token')
+  .action(async (token: string) => {
     try {
-      // Validate URL format
-      if (
-        !url.startsWith('libsql://') &&
-        !url.startsWith('https://') &&
-        !url.startsWith('http://')
-      ) {
-        console.error(chalk.red('Invalid URL. Must start with libsql://, https://, or http://'));
+      // Validate token format
+      if (!token.startsWith('ukpro_')) {
+        console.error(chalk.red('Invalid token format. Pro tokens start with "ukpro_"'));
         process.exit(1);
       }
 
-      // Configure sync settings as a complete object to avoid partial validation
-      const syncConfig: { enabled: boolean; url: string; authToken?: string; autoSync: boolean } = {
-        enabled: true,
-        url,
-        autoSync: options?.autoSync !== false,
-      };
-      if (authToken) {
-        syncConfig.authToken = authToken;
+      if (!process.env.UNIKORTEX_SYNC_SERVICE_URL) {
+        console.error(chalk.red('Sync service URL not configured.'));
+        console.error(chalk.dim('Set UNIKORTEX_SYNC_SERVICE_URL environment variable.'));
+        process.exit(1);
       }
-      setConfigValue('sync', syncConfig);
 
-      console.log(chalk.green('✓ Sync configured successfully!'));
-      console.log('');
-      console.log(`  URL: ${chalk.cyan(url)}`);
-      console.log(`  Auth: ${authToken ? chalk.dim('***') : chalk.dim('(none)')}`);
-      console.log(
-        `  Auto-sync: ${options?.autoSync !== false ? chalk.green('enabled') : chalk.yellow('disabled')}`
-      );
-      console.log('');
-      console.log('Run ' + chalk.cyan('unikortex sync') + ' to sync now.');
+      const spinner = ora('Validating token...').start();
+
+      try {
+        // Validate token with cloud service
+        const syncService = new ManagedSyncService({
+          sync: { enabled: true, proToken: token },
+        });
+        const validation = await syncService.validateToken(token);
+
+        if (!validation.valid) {
+          spinner.fail(chalk.red('Invalid token'));
+          process.exit(1);
+        }
+
+        // Save token to config
+        setConfigValue('sync', {
+          enabled: true,
+          proToken: token,
+          autoSync: true,
+        });
+
+        spinner.succeed(chalk.green('Logged in successfully!'));
+        console.log('');
+        console.log(`  Account: ${chalk.cyan(validation.email)}`);
+        console.log(`  Plan:    ${chalk.green(validation.plan)}`);
+        console.log('');
+        console.log('Run ' + chalk.cyan('unikortex sync') + ' to sync now.');
+      } catch (error) {
+        spinner.fail(chalk.red('Login failed'));
+        console.error(chalk.red((error as Error).message));
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error(chalk.red((error as Error).message));
+      process.exit(1);
+    }
+  });
+
+// Subcommand: logout
+syncCommand
+  .command('logout')
+  .description('Logout from UniKortex Cloud (keeps local data)')
+  .action(() => {
+    try {
+      const config = loadConfig();
+
+      if (!config.sync?.proToken) {
+        console.log(chalk.yellow('Not logged in.'));
+        return;
+      }
+
+      // Remove token but keep sync config structure
+      setConfigValue('sync', {
+        enabled: false,
+        autoSync: true,
+      });
+
+      console.log(chalk.green('✓ Logged out successfully.'));
+      console.log(chalk.dim('Your local data has been preserved.'));
     } catch (error) {
       console.error(chalk.red((error as Error).message));
       process.exit(1);
@@ -156,20 +200,18 @@ syncCommand
       console.log(chalk.bold('Sync Status:'));
       console.log('');
 
-      if (!config.sync?.enabled || !config.sync?.url) {
-        console.log(`  Enabled: ${chalk.red('No')}`);
+      if (!config.sync?.enabled || !config.sync?.proToken) {
+        console.log(`  Logged in:  ${chalk.red('No')}`);
         console.log('');
-        console.log(chalk.dim('Run "unikortex sync setup <url>" to configure sync.'));
+        console.log(chalk.dim('Run "unikortex sync login <token>" to enable cloud sync.'));
+        console.log(chalk.dim('Get your Pro token at https://unikortex.io'));
         return;
       }
 
-      console.log(`  Enabled:   ${chalk.green('Yes')}`);
-      console.log(`  URL:       ${chalk.cyan(config.sync.url)}`);
+      console.log(`  Logged in:  ${chalk.green('Yes')}`);
+      console.log(`  Token:      ${chalk.dim(config.sync.proToken.slice(0, 12) + '...')}`);
       console.log(
-        `  Auth:      ${config.sync.authToken ? chalk.dim('configured') : chalk.dim('(none)')}`
-      );
-      console.log(
-        `  Auto-sync: ${config.sync.autoSync !== false ? chalk.green('Yes') : chalk.yellow('No')}`
+        `  Auto-sync:  ${config.sync.autoSync !== false ? chalk.green('Yes') : chalk.yellow('No')}`
       );
 
       // Try to get last sync info
@@ -184,11 +226,11 @@ syncCommand
       try {
         const status = syncManager.getSyncStatus();
         console.log(
-          `  Last sync: ${status.lastSyncAt ? status.lastSyncAt.toISOString() : chalk.dim('Never')}`
+          `  Last sync:  ${status.lastSyncAt ? status.lastSyncAt.toISOString() : chalk.dim('Never')}`
         );
-        console.log(`  Device ID: ${chalk.dim(status.deviceId)}`);
+        console.log(`  Device ID:  ${chalk.dim(status.deviceId)}`);
       } catch {
-        console.log(`  Last sync: ${chalk.dim('Unknown')}`);
+        console.log(`  Last sync:  ${chalk.dim('Unknown')}`);
       }
 
       await storage.close();
@@ -201,12 +243,13 @@ syncCommand
 // Subcommand: disable
 syncCommand
   .command('disable')
-  .description('Disable remote sync')
+  .description('Disable cloud sync (keeps credentials)')
   .action(() => {
     try {
       setConfigValue('sync.enabled', false);
       console.log(chalk.green('✓ Sync disabled.'));
       console.log(chalk.dim('Your data will only be stored locally.'));
+      console.log(chalk.dim('Run "unikortex sync enable" to re-enable.'));
     } catch (error) {
       console.error(chalk.red((error as Error).message));
       process.exit(1);
@@ -216,21 +259,18 @@ syncCommand
 // Subcommand: enable
 syncCommand
   .command('enable')
-  .description('Enable remote sync (requires previous setup)')
+  .description('Enable cloud sync (requires login)')
   .action(() => {
     try {
       const config = loadConfig();
 
-      if (!config.sync?.url) {
-        console.error(
-          chalk.red('Sync URL not configured. Run "unikortex sync setup <url>" first.')
-        );
+      if (!config.sync?.proToken) {
+        console.error(chalk.red('Not logged in. Run "unikortex sync login <token>" first.'));
         process.exit(1);
       }
 
       setConfigValue('sync.enabled', true);
       console.log(chalk.green('✓ Sync enabled.'));
-      console.log(`  URL: ${chalk.cyan(config.sync.url)}`);
     } catch (error) {
       console.error(chalk.red((error as Error).message));
       process.exit(1);

@@ -13,6 +13,7 @@ import {
   getDatabasePath,
   setConfigValue,
   SyncManager,
+  ManagedSyncService,
 } from '@unikortex/core';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -43,129 +44,131 @@ function getClaudeConfigPath(): string | null {
 }
 
 /**
- * Show Turso setup instructions
- */
-function showTursoInstructions(): void {
-  console.log('');
-  console.log(chalk.bold.cyan('═══ How to get Turso credentials ═══'));
-  console.log('');
-  console.log(chalk.bold('1. Sign up at Turso (free):'));
-  console.log(chalk.cyan('   https://turso.tech'));
-  console.log('');
-  console.log(chalk.bold('2. Create a database:'));
-  console.log(chalk.dim('   Dashboard → Create Database → Name it "unikortex"'));
-  console.log('');
-  console.log(chalk.bold('3. Get your database URL:'));
-  console.log(chalk.dim('   Click your database → Copy the URL'));
-  console.log(chalk.dim('   Example: libsql://unikortex-yourname.turso.io'));
-  console.log('');
-  console.log(chalk.bold('4. Create an auth token:'));
-  console.log(chalk.dim('   Database → Generate Token → Copy the token'));
-  console.log('');
-  console.log(chalk.dim('Free tier: 9GB storage, 1 billion row reads/month'));
-  console.log('');
-}
-
-/**
- * Interactive sync configuration
+ * Interactive sync configuration with Pro token
  */
 async function configureSyncInteractive(): Promise<boolean> {
-  showTursoInstructions();
+  console.log('');
+  console.log(chalk.bold.cyan('═══ UniKortex Cloud Sync ═══'));
+  console.log('');
+  console.log(chalk.dim('Sync your knowledge base across all your devices.'));
+  console.log(chalk.dim('Get your Pro token at: ') + chalk.cyan('https://unikortex.io'));
+  console.log('');
 
-  const { hasCredentials } = await inquirer.prompt<{ hasCredentials: boolean }>([
+  const { hasToken } = await inquirer.prompt<{ hasToken: boolean }>([
     {
       type: 'confirm',
-      name: 'hasCredentials',
-      message: 'Do you have your Turso database URL and token ready?',
+      name: 'hasToken',
+      message: 'Do you have a UniKortex Pro token?',
       default: false,
     },
   ]);
 
-  if (!hasCredentials) {
+  if (!hasToken) {
     console.log('');
     console.log(chalk.yellow('No problem! You can configure sync later with:'));
-    console.log(chalk.cyan('  unikortex sync setup <url> [token]'));
+    console.log(chalk.cyan('  unikortex sync login <pro-token>'));
     console.log('');
     return false;
   }
 
-  const answers = await inquirer.prompt<{ url: string; authToken: string }>([
+  const { token } = await inquirer.prompt<{ token: string }>([
     {
-      type: 'input',
-      name: 'url',
-      message: 'Turso database URL:',
+      type: 'password',
+      name: 'token',
+      message: 'Enter your Pro token (ukpro_...):',
+      mask: '*',
       validate: (input: string) => {
         if (!input.trim()) {
-          return 'URL is required';
+          return 'Token is required';
         }
-        if (
-          !input.startsWith('libsql://') &&
-          !input.startsWith('https://') &&
-          !input.startsWith('http://')
-        ) {
-          return 'URL must start with libsql://, https://, or http://';
+        if (!input.startsWith('ukpro_')) {
+          return 'Token must start with "ukpro_"';
         }
         return true;
       },
     },
-    {
-      type: 'password',
-      name: 'authToken',
-      message: 'Auth token (optional for local libsql):',
-      mask: '*',
-    },
   ]);
 
-  // Save sync configuration as a complete object to avoid partial validation
-  const syncConfig: { enabled: boolean; url: string; authToken?: string; autoSync: boolean } = {
-    enabled: true,
-    url: answers.url,
-    autoSync: true,
-  };
-  if (answers.authToken) {
-    syncConfig.authToken = answers.authToken;
-  }
-  setConfigValue('sync', syncConfig);
+  // Check if service URL is configured
+  if (!process.env.UNIKORTEX_SYNC_SERVICE_URL) {
+    console.log('');
+    console.log(chalk.yellow('Sync service URL not configured.'));
+    console.log(chalk.dim('Set UNIKORTEX_SYNC_SERVICE_URL environment variable.'));
+    console.log('');
+    console.log(chalk.yellow('Token saved but sync will not work until URL is configured.'));
 
-  // Test the connection and perform initial sync
-  const spinner = ora('Testing connection to Turso...').start();
+    // Save token anyway for when URL is configured
+    setConfigValue('sync', {
+      enabled: true,
+      proToken: token,
+      autoSync: true,
+    });
+    return false;
+  }
+
+  // Validate token with cloud service
+  const spinner = ora('Validating Pro token...').start();
 
   try {
+    const syncService = new ManagedSyncService({
+      sync: { enabled: true, proToken: token },
+    });
+    const validation = await syncService.validateToken(token);
+
+    if (!validation.valid) {
+      spinner.fail(chalk.red('Invalid token'));
+      return false;
+    }
+
+    // Save sync configuration
+    setConfigValue('sync', {
+      enabled: true,
+      proToken: token,
+      autoSync: true,
+    });
+
+    spinner.succeed(chalk.green('Token validated!'));
+    console.log('');
+    console.log(`  Account: ${chalk.cyan(validation.email)}`);
+    console.log(`  Plan:    ${chalk.green(validation.plan)}`);
+
+    // Perform initial sync
+    spinner.start('Performing initial sync...');
+
     const storage = new SQLiteStorage(getDatabasePath());
     await storage.initialize();
 
     const syncManager = new SyncManager({ storage });
     await syncManager.initialize();
 
-    spinner.text = 'Syncing with remote database...';
     const result = await syncManager.fullSync();
 
     await syncManager.close();
     await storage.close();
 
-    spinner.succeed(chalk.green('Connected to Turso and synced successfully!'));
+    spinner.succeed(chalk.green('Initial sync completed!'));
 
     // Show sync results if anything was synced
     if (result.projectsPulled > 0 || result.entriesPulled > 0) {
       console.log('');
-      console.log(chalk.bold('  Pulled from remote:'));
+      console.log(chalk.bold('  Pulled from cloud:'));
       console.log(`    Projects: ${result.projectsPulled}`);
       console.log(`    Entries:  ${result.entriesPulled}`);
     }
     if (result.projectsPushed > 0 || result.entriesPushed > 0) {
       console.log('');
-      console.log(chalk.bold('  Pushed to remote:'));
+      console.log(chalk.bold('  Pushed to cloud:'));
       console.log(`    Projects: ${result.projectsPushed}`);
       console.log(`    Entries:  ${result.entriesPushed}`);
     }
 
     return true;
   } catch (error) {
-    spinner.fail(chalk.red('Failed to connect to Turso'));
+    spinner.fail(chalk.red('Failed to configure sync'));
     console.log(chalk.red(`  Error: ${(error as Error).message}`));
     console.log('');
-    console.log(chalk.yellow('Sync configuration saved but connection failed.'));
-    console.log(chalk.dim('Check your credentials and try: unikortex sync'));
+    console.log(chalk.yellow('You can try again later with:'));
+    console.log(chalk.cyan('  unikortex sync login <pro-token>'));
     return false;
   }
 }
@@ -235,7 +238,7 @@ export const initCommand = new Command('init')
   .option('--force', 'Reinitialize even if already initialized')
   .option('--dev', 'Development mode: use local paths for MCP (for testing)')
   .option('--local', 'Skip sync setup, use local-only mode')
-  .option('--sync', 'Enable sync mode and configure Turso')
+  .option('--sync', 'Enable sync mode and configure cloud sync')
   .action(async (options: { force?: boolean; dev?: boolean; local?: boolean; sync?: boolean }) => {
     try {
       if (isInitialized() && !options.force) {
@@ -274,7 +277,7 @@ export const initCommand = new Command('init')
                 short: 'Local',
               },
               {
-                name: `${chalk.bold('Multi-device sync')} - Sync across devices using Turso (free cloud database)`,
+                name: `${chalk.bold('Cloud sync')} - Sync across devices (requires Pro subscription)`,
                 value: 'sync',
                 short: 'Sync',
               },
@@ -309,9 +312,10 @@ export const initCommand = new Command('init')
         console.log('');
         const syncConfigured = await configureSyncInteractive();
         if (syncConfigured) {
-          console.log(chalk.bold.green('═══ Multi-Device Sync ═══'));
           console.log('');
-          console.log(chalk.green('  ✓ Sync configured and connected!'));
+          console.log(chalk.bold.green('═══ Cloud Sync ═══'));
+          console.log('');
+          console.log(chalk.green('  ✓ Cloud sync configured and connected!'));
           console.log(chalk.dim('  Your knowledge base will sync across devices automatically.'));
           console.log('');
         }
@@ -319,7 +323,7 @@ export const initCommand = new Command('init')
         console.log('');
         console.log(chalk.bold('📦 Storage Mode:'));
         console.log(chalk.dim('  Local only - data stored on this device'));
-        console.log(chalk.dim('  Enable sync later: unikortex sync setup <url>'));
+        console.log(chalk.dim('  Enable sync later: unikortex sync login <pro-token>'));
         console.log('');
       }
 

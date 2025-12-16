@@ -230,12 +230,11 @@ export const ConfigSchema = z.object({
     })
     .optional(),
 
-  // Remote sync configuration (Turso)
+  // Remote sync configuration (Pro subscription)
   sync: z
     .object({
       enabled: z.boolean().default(false),
-      url: z.string(), // Turso database URL (libsql://<db>-<org>.turso.io)
-      authToken: z.string().optional(), // Turso auth token (optional for local libsql)
+      proToken: z.string().optional(), // Pro subscription token (ukpro_xxxx)
       autoSync: z.boolean().default(true), // Auto-push on write, auto-pull before read
       syncInterval: z.number().int().nonnegative().default(0), // Interval in ms for background sync (0 = disabled)
     })
